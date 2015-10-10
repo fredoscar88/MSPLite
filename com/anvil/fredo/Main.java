@@ -1,7 +1,14 @@
 //MSPLite
+
+//HUGE DISCLAIMER TO MYSELF
+/*
+ * Er, this was not built to utilize all benefits of OOP. I'm not using named instances of the singular server,
+ * rather I just use a server class very staticly so this will not be feasible to port to MSP full, but we can still
+ * build off of it. It will be a bit hard is all.
+ */
+
 package com.anvil.fredo;
 
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -11,16 +18,23 @@ import java.util.Scanner;
 //@SuppressWarnings("unused")
 public class Main {
 
+	//How much of this shit is unused. I mean seriously.
+	
 	static String ConsoleInput/* = "start"*/; 	//temporarily defaults to start //(not right now)
 	static String ConsoleCmd;	//
 	static Scanner ConsoleReader;	//Scanner to acquire input
 	static boolean running;	//If the main thread is running. If false should close all other threads.
 	static List<String> cmd;
+	static boolean debug = false;
 	
 	//static File dirServers;	//Servers directory
 	//static File dirRes;	//Resources directory
 	//static File dataServerData;	//General server data file	(Contains meta data like # of servers)
 	static File eulaTXT;	//EULA text file
+	static File logs;
+	static File redstoneTxtDir;
+	static File playerRank;
+	static File players;
 	
 	//static BufferedWriter fileWriter;	//May not be needed
 	static String fileReadoutValue;
@@ -77,8 +91,9 @@ public class Main {
 		
 		running = true;
 		
+		System.out.println("Type \"?\" or \"help\" for help.");
 		while (running) {
-			
+			//I might want to put the try catch here, but am not doing so RN so I can find the problem easier.
 			cmd.clear();
 			cmd = console.ConsoleRun();
 			ConsoleAction(cmd);
@@ -95,15 +110,18 @@ public class Main {
 			case "?":
 			case "help": help(cmd); break;
 			case "stop":
-			case "exit": running=false; Server.sendCommand("stop"); break; //Exits console, stops all servers (by sending stop commands to their own ConsoleAction menus, we'll create a function for this)
-			case "MakeRedstone": break;
+			case "exit": running=false; Server.stopServer(); break; //Exits console, stops all servers (by sending stop commands to their own ConsoleAction menus, we'll create a function for this). Uh yeah. Also waits for user input to close.
+			case "MakeRedstone": MakeRedstone(redstoneTxtDir); break;
 			case "MakeSpawnChunks": makeSpawnChunks(pInt(cmd.get(1)),pInt(cmd.get(2)),pInt(cmd.get(3)),pInt(cmd.get(4))); break;
 			case "ping": Server.sendCommand("say Pong!"); break;
+			case "debug": debug = !debug; break;
 			case "server":
 			
 			default : System.out.println("Type \"Help\" or \"?\" for help"); Main.ConsoleInput = null;
 			}
 		} catch (IndexOutOfBoundsException e) {
+			//TEMPORARY DEBUG
+			//e.printStackTrace();
 			System.out.println("[MCServerPal] Error: Missing syntax");
 			getSyntax(cmd.get(0));
 			//e.printStackTrace();	//NO. MAYBE write to an output log. MAYBE.
@@ -127,8 +145,19 @@ public class Main {
 			MainThreadFileUpdater.write(eulaTXT, "eula=true");
 		}
 		
-		File logs = new File("logs");
+		logs = new File("logs");
 		logs.mkdirs();
+		
+		redstoneTxtDir = new File("Redstone");
+		redstoneTxtDir.mkdirs();
+		
+		//When a player joins for the first time, we can probably add them as rank 0 to the file using file updater.
+		//We'd use OIUpdater of course, no need to create conflict. I have to add a method to add a setting.
+		players = new File("MSPPlayers");
+		players.mkdirs();
+		
+		playerRank = new File("MSPPlayers" + File.separator + "PlayerRank.txt");
+		playerRank.createNewFile();
 		
 		File servProps = new File("server.properties");
 		if (servProps.createNewFile()) {
@@ -167,12 +196,35 @@ public class Main {
 		
 	}
 
-	//Should this be changed to send the command to the server?
-	//Actually not a huge fan of being able to directly attack the server interface, let that be left to the GUI
 	static void output (String message) throws IOException {
 		System.out.println("[MCServerPal] " + message);
 		//Server.sendCommand(message);
 	}
+	static void dbOutput(String message) {
+		
+		if (debug) System.out.println("DEBUG: " + message);
+	}
+	
+	//maybe use this one with MakeSpawnChunks?
+	static public int modulo(int x, int y) {
+		
+		int result;
+		
+		if (x < 0) {
+			result = y + (x % y);
+			if (result % 16 == 0) {
+				result = 0;
+				System.out.println("Bing bong!");
+			}
+		}
+		else {
+			result = (x % y);
+		}
+		
+		return result;
+		
+	}
+	
 	
 	//Automatically starts the server, put into a method because why not. Bear in mind since this is MSPLite there is
 	//only one server to start.
@@ -189,8 +241,9 @@ public class Main {
 		Server.sendCommand("gamerule doEntityDrops false");
 		Server.sendCommand("gamerule doTileDrops false");
 		Server.sendCommand("gamerule mobGriefing false");
-		Server.sendCommand("gamerule sendCommandFeedback false");
+		//Server.sendCommand("gamerule sendCommandFeedback false");
 		Server.sendCommand("gamerule logAdminCommands false");
+		Server.sendCommand("gamerule commandBlockOutput false");
 		
 		//Here's where we'd access the script class and run the startup script
 		//Tempted to change name of MainThreadFileUpdater and that class entirely really to something saying
@@ -313,5 +366,32 @@ public class Main {
 	static int getLowestRelativeChunkBySize(int size) {
 		return ((size-1)/2);
 	}
+	
+	static void MakeRedstone(File dir) throws IOException {
+		//Calls the constructor of MakeRedstone into action for every file, starting with main.
+		
+		File mainFile = new File (dir.getAbsolutePath() + File.separator + "main.txt");
+		new MakeRedstone(mainFile);
+		
+		for (File file : dir.listFiles()) {
+			
+			//would have used hashset but cba.
+			if (file.isFile() && !(file.getName().equals("main.txt") || file.getName().equals("replaces.txt") || file.getName().equals("NOTES.txt"))) {
+				new MakeRedstone(file);	//this is the MAKEREDSTONE CLASS constructor
+				
+			}
+		}
+		for (File file : redstoneTxtDir.listFiles()) {
+			
+			if (file.isDirectory()) {
+				MakeRedstone(file);	//this is the MAIN CLASS method
+				
+			}
+		}
+		
+		//move onto directories
+		
+	}
+
 	
 }

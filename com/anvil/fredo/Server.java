@@ -17,25 +17,13 @@ import java.io.PrintWriter;
 //@SuppressWarnings("unused")
 public class Server {
 	
+	static OutputThread OT;
+	
 	static PrintWriter cmdSend;
 	static Process p;
 	
 	boolean running;
 	
-	/*public Server(String servName, String servFolderPath) {
-		
-		System.out.println(servFolderPath);
-		
-		dirServ = new File(servFolderPath);
-		dirServ.mkdirs();
-		MCSPPlayers= new File(servFolderPath + "Players");
-		MCSPPlayers.mkdirs();
-		MCSPScripts = new File(servFolderPath + "Scripts");
-		MCSPScripts.mkdirs();
-		MCSPServFolder = new File(servFolderPath + "Server");
-		MCSPServFolder.mkdirs();
-		
-	}*/
 	
 	//Yo dawg, don't put everything into a constructor. We need to make the output method separate.
 	
@@ -50,8 +38,8 @@ public class Server {
 		
 		System.out.println("Server has been started.");
 	}
-	
-	
+
+	//Im not sure where exactly Im starting the server with the changed working directory, or maybe Im not idk.	
 	static void startServer(String jarname) throws IOException {
 		
 		File dir = new File(jarname);
@@ -59,7 +47,7 @@ public class Server {
 		ProcessBuilder server = new ProcessBuilder("java","-Xms1024M","-Xmx1024M","-jar", dir.getAbsolutePath()/*,"nogui"*/);	//nogui only if we print the input stream to the console which we won't.
 		//It's possible that in ProcessBuilder we might just be able to put jarname in place of dir.getAbsolutePath or
 		//at least not use the absolute path
-		System.out.println("directory: " + server.directory()); //<(REMOVE)debug should be null
+		//System.out.println("directory: " + server.directory()); //<(REMOVE)debug should be null
 		//We need to be able to support more arguments for running the jar
 		//What I might do is add an "arguments" text file that will be put in place of the ("java","-jar",...) stuff
 		//with default memory options and it will enable people to use their own arguments
@@ -68,8 +56,17 @@ public class Server {
 		p = server.start();
 		cmdSend = new PrintWriter(p.getOutputStream());
 		
+		OT = new OutputThread(p, "Output Thread");
+		OT.start();
+		
+		
 	}
 	
+	static void stopServer() throws IOException {
+		
+		sendCommand("stop");
+		OT.terminate();
+	}
 	
 	static public void sendCommand(String command) throws IOException {
 		

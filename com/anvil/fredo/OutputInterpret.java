@@ -1,15 +1,143 @@
 //MSPLite
 package com.anvil.fredo;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
+
+//this class will serve like one purpose :I
 public class OutputInterpret {
-	//Temporarily don't need
+	
+	List<String> message;
+	Console OIC;
+	int rank;
+	String player;
+	String msgString;
+	
+	FileUpdater OIFileReader;
+	
+	public OutputInterpret() {
+		
+		OIFileReader = new FileUpdater();
+		this.OIC = new Console("Output Interpret console");
+		
+	}
+	
+	public void Interpret(String input) throws IOException {
+		input = Reduce(input);
+		message = InputCheck(input);
+		
+		//message.get(0);	//Executor of the command
+		//message.get(1); //The command executed by the above
+		/*Here we check to see if the executor has the rights to execute the command and if so, executes it*/
+		
+		if (message != null && (message.get(2) == "PLAYER")) {
+			player = message.get(0);
+			msgString = message.get(1);
+			
+			System.out.println("\"" + player + "\" entered " + "\"" + msgString + "\"");
+			message = OIC.PConsoleParse(msgString);
+			
+			PlayerAction(player, message);
+			
+		}
+		
+		
+	}
+	
+	public void PlayerAction(String player, List<String> cmd) throws IOException {
+		//Snags the players 'rank' or rather, in this case, checks to see if they are authorized.
+		boolean temp = true;
+		
+		//What would be better than a single file that stores each player and their rank, give each player a file
+		//and store all relevant data there. So there is a directory for player files, and then a fredo file for fredo, etc.
+		try {
+			rank = Integer.parseInt(OIFileReader.getSetting(Main.playerRank, player));
+			System.out.println("Rank of " + player + ": " + rank);
+		} catch (Exception e) {
+			System.out.println(player + " has no registered rank (or some other error occurred");
+			temp = false;
+		}
+		
+		switch (cmd.get(0)) {
+		case "!OpMe": if (rank >= 800) Server.sendCommand("op " + player); break;
+		case "!MkRdStone": if (rank >= 1000) {Server.sendCommand("say Making redstone..."); Main.MakeRedstone(Main.redstoneTxtDir);} break;
+		case "!Exit": if (rank >= 1000) {Main.running = false; /*make that a setter >:V*/ Server.stopServer();} break;
+		}
+	}
+	
+	
+	
+	
+	
+	
+	static public String Reduce(String input) {
+		
+		input = input.substring(11);
+		
+		for (int i = 0; i < input.length(); i++) {
+			if (input.charAt(i) == ']') {
+				input = input.substring(i+3);	//We need to do some try catching here, as some of the strings have input out of bounds. We can't interpret that. so if it fails, have the catch jut return some bs :)
+				
+				return input;
+			}
+		}
+		
+		return input;
+	}
+	
+	static private List<String> InputCheck(String input) {
+		List<String> temp;
+		char tempFirstChar = input.charAt(0);
+		
+		switch (tempFirstChar) {
+		
+		case '<': temp = InputPlayer(input); break;
+		case '[': temp = InputOP(input); break;// this is /say input, from the server or an operator. So basically OP only stuff.
+		default: temp = null;
+		
+		}
+		
+		return temp;
+	}
+	
+	static private List<String> InputPlayer(String input) {
+		List<String> temp = new ArrayList<String>();
+		
+		for (int i = 3; i < input.length(); i++) {
+			if (input.charAt(i)== '>') {
+				temp.add(input.substring(1,i)); //Gets which player entered input (temp.get(0))
+				
+				temp.add(input.substring(i+2));	//Gets what the player input
+				//System.out.println();	//Prints a line for legibility's sake
+				temp.add("PLAYER");
+				
+				return temp;
+				
+			}
+		}
+		
+		return null;
+	}
+	static private List<String> InputOP(String input) {
+		List<String> temp = new ArrayList<String>();
+		
+		for (int i = 3; i < input.length(); i++) {
+			if (input.charAt(i)== ']') {
+				temp.add(input.substring(1,i)); //Gets which operator entered input (temp.get(0))
+				
+				temp.add(input.substring(i+2));	//Gets what the op input
+				//System.out.println();	//Prints a line for legibility's sake
+				temp.add("OP");
+				
+				return temp;
+			}
+		}
+		
+		return null;
+	}
+	
 }
 
 /*

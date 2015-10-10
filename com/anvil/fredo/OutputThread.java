@@ -16,6 +16,7 @@ public class OutputThread extends Thread implements Runnable {
 	BufferedWriter bw;
 	OutputInterpret oi;
 	
+	boolean running;
 	
 	public OutputThread(Process p, String name) {
 		
@@ -23,68 +24,58 @@ public class OutputThread extends Thread implements Runnable {
 		
 		threadName = name;
 	
+		
 	}
 	
 	public void run() {
 		
-		File OutputLog = new File("OutputLog.txt");	//Remember to copy this over into a backup when the end script is called
-		
-		//b/c OutputInterpret is temporarily gone
-		/*try {
-			oi = new OutputInterpret(serverID);
-		} catch (IOException e2) {
-			e2.printStackTrace();
-		}*/
-		
-		try {
-			bw = new BufferedWriter(new FileWriter(OutputLog));
-			System.out.println("bw is now writing to OutputLog");
-		} catch (IOException e1) {
-			e1.printStackTrace();
-		}
-		
 		String output;
 		
-		try {
-			while (!t/*.currentThread()*/.isInterrupted() && ((output = br.readLine()) != null)) {
+		while (running) {
 			
-				System.out.println(output);
+			
+			//((output = br.readLine()) != null); what we formally used in a while loop, 
+			
+			try {
+				//So it should be noted that this works not quite as expected. I expected it to jump to the catch case 
+				//if no output was present but what I think is happening is br.readLine() returns null, which doesn't trigger
+				//an exception. Will test.
+				//That is exactly what was happening. I've got it working how I want it now.
+				output = br.readLine();
+				oi.Interpret(output);
 				
-				//	System.out.println(output);
+				//OutputInterpret here!
 				
-				//oi.Interpret(output);
+				Main.dbOutput("OT check");
 				
-				try {
-					bw.write(output);
-					bw.newLine();
-					bw.flush();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-	
+			} catch (Exception e) {
+				System.out.println("Something has gone terribly wrong! But I don't know what!");
 			}
-			
-			System.out.println("OutputThread termination message ('try' success)");
-		
-		} catch (IOException e) {
-			e.printStackTrace();
-			System.out.println("OutputThread termination message ('try' failure)");
+
 		}
-		System.out.println("OutputThread termination message. This thread should close! And be the last one to close!"
-				+ "\n Hell when any given server closes it should attempt to shutdown the output thread first!");
+			
 		
 		return;
 		
 	}
 	
+	
+	
+	
 	public void start( ) {
-		System.out.println("Starting...");
+		this.running = true;
+		
+		oi = new OutputInterpret();
 		
 		if (t==null) {
 			t = new Thread (this, threadName);
 			t.start();
 		}
 		
+	}
+	
+	public void terminate() {
+		this.running = false;
 	}
 	
 	/*public void start() {

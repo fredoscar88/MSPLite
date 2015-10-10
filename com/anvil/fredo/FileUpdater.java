@@ -1,5 +1,10 @@
 package com.anvil.fredo;
 
+//WE NEED:
+/*
+ * -A method to add settings to the file (like in player rank)
+ */
+
 import java.io.IOException;
 import java.io.File;
 import java.io.FileReader;
@@ -21,7 +26,8 @@ public class FileUpdater {
 	String tempFile;
 	String tempSetting;
 	
-	public FileUpdater() throws IOException {
+	//kek we don't even need the IOException
+	public FileUpdater() /*throws IOException */{
 		
 		//reader = new BufferedReader(new FileReader(file));
 		//Given the nature of reading files it makes sense to have it be reset each time I want to read the
@@ -102,7 +108,7 @@ public class FileUpdater {
 		tempSetting = getSetting(file, setting);	//Gets the setting that we are replacing
 		if (tempSetting == null) tempSetting = "";	//Sets to an empty string, because if the setting returns null that's because it didn't find anything, represented by an empty string.
 		
-		tempFile = read(file);						//Returns the file
+		tempFile = read(file);						//Returns the file's content in string form
 		
 		tempFile = tempFile.replace(setting + "=" + tempSetting, setting + "=" + changeTo);
 		//Replaces the setting with what we want to change it to

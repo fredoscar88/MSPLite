@@ -21,8 +21,8 @@ public class Console {
 	public Console(String name) {
 		ConsoleStartMessage = name;
 		
-		System.out.println(ConsoleStartMessage);
-		System.out.println("Type \"?\" or \"help\" for help.");
+		/*System.out.println(ConsoleStartMessage);
+		System.out.println("Type \"?\" or \"help\" for help.");*/
 		
 	}
 	
@@ -64,64 +64,8 @@ public class Console {
 		return ConsoleRun();
 	}
 	
-	//Keeping this for legacy purposes
-	/*boolean ConsoleParse(String ConsoleInput) {
-		//NOTE BIEN! We should change this to use a list! We can parse out each value of a command
-		//and plug them in to their specific syntax spots!
-		if (ConsoleInput == null) {
-			System.out.println("Console input is null!");
-			Parse = null;
-			return false;
-		}	
-		
-		ConsoleInput = ConsoleInput.trim();	//removes any extra whitespace on the front and end
-		String ParseNext = ConsoleInput;	//Sets the ParseNext to ConsoleInput
-		ConsoleInput = ConsoleInput.replace(" ", "_");	//Replaces remaining spaces with underscore
-		boolean runFor = true;
-		
-		
-		if (ParseNext.equals(ConsoleInput)) {	//This condition checks to see if the input is the only command word
-			
-			Main.ConsoleInput = null;	//Since we've just parsed the entirety of the command, there is no more left, so we reset it
-			Parse = ParseNext;	
-			return true;
-		}
-		
-		
-		
-		
-		/*if (ConsoleInput.trim().equals(ParseNext.trim())) {
-			System.out.println("DEBUG: There are no spaces in the input command");
-			Parse = ParseNext;
-			return true;
-		}*/
-		
-		//Parses out the next word
-		/*for (int i = 0; i < ParseNext.length() && runFor; i++) {
-				
-			if (ParseNext.substring(i, i+1).equals(" ")) {
-				
-				ConsoleInput = ParseNext.substring(i+1);	//Removes the string we've just parsed from the rest of the input
-				ParseNext = ParseNext.substring(0,i);	//Removes whatever we don't want from our parse
-				runFor = false;							//Stops running
-			}
-			else if ((i == (ParseNext.length() - 1)) && runFor) {
-				
-				System.out.println("Hello, world, you should never see me!");
-				return false;	//Theoretically we'll never see this. This case can only be reached if the parser runs and doesn't find a space, but if there are no spaces to be found it is caught earlier
-				
-			}
-			
-		}
-		
-		
-		Main.ConsoleInput = ConsoleInput;
-		Parse = ParseNext;
-		return true;
-	}*/
-	
 	//Not sure how much I like how this is void. I feel it should be List<String>
-	void ConsoleParseCmd(String ConsoleInput) {
+	private void ConsoleParseCmd(String ConsoleInput) {
 		
 		boolean jRun;
 		boolean iRun;
@@ -149,6 +93,46 @@ public class Console {
 				
 			}
 			
+		} catch (IndexOutOfBoundsException e) {
+			e.printStackTrace();
+			System.out.println("My conjecture is the substring ran when it shouldn't have, in Console"
+					+ "\nHopefully this caught exception won't force the program into crashing");
+			cmd = null;
+		}
+		
+	}
+	
+	public List<String> PConsoleParse(String ServerInput) {
+		List<String> temp;
+		
+		boolean jRun;
+		boolean iRun;
+		//System.out.println("CPC ran");
+		temp = new ArrayList<String>();
+		
+		try {
+			iRun = true;
+			
+			for (int i =0; iRun; i++) {
+				jRun=true;
+				for (int j = 0; jRun; j++) {
+					if (ServerInput.replace(" ", "_").equals(ServerInput)) {
+						temp.add(ServerInput);
+						iRun = false;
+						jRun = false;
+						return temp;
+					}
+					
+					if (ServerInput.substring(j, j+1).equals(" ")) {
+						temp.add(/*i, */ServerInput.substring(0, j));
+						ServerInput = ServerInput.substring(j+1);
+						jRun = false;
+					}
+					
+				}
+				
+			}
+			
 		} finally {
 			/*System.out.println(cmd.size());
 			for (int i = 0;i < cmd.size();i++) {
@@ -157,9 +141,8 @@ public class Console {
 			System.out.println();*/
 		}
 		
+		return null;
 	}
-	
-	
 }
 
 //All of the below is blah. Atm we're gunna change it to where any command can grab the syntax from the console. It's not the best solution (for ex. it doesn't really allow for multiple option flags, that would require constant parsing (i.e "--<optionname>" flags))
