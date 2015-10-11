@@ -12,6 +12,7 @@ package com.anvil.fredo;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Scanner;
 
@@ -65,7 +66,7 @@ public class Main {
 		//NOTE If no args are specified in running the server (i.e you double click MSP.jar) it will cut off when
 		//it tries to find args[0]. No server will start, and the program crashes. This is intentional
 		//behavior as right now a console should be used to start the program as it is useless without a GUI.
-		System.out.println("Running MCServerPal!");
+		System.out.println("Running MCServerPal! V1.0");
 		System.out.println(args[0]);
 		AutoStart(args[0]);
 		
@@ -115,6 +116,8 @@ public class Main {
 			case "MakeSpawnChunks": makeSpawnChunks(pInt(cmd.get(1)),pInt(cmd.get(2)),pInt(cmd.get(3)),pInt(cmd.get(4))); break;
 			case "ping": Server.sendCommand("say Pong!"); break;
 			case "debug": debug = !debug; break;
+			case "getrank": output(OutputInterpret.returnPlayerSetting(cmd.get(1), "rank")); break;
+			case "getrole":	output(OutputInterpret.returnPlayerSetting(cmd.get(1), "role")); break;
 			case "server":
 			
 			default : System.out.println("Type \"Help\" or \"?\" for help"); Main.ConsoleInput = null;
@@ -145,8 +148,8 @@ public class Main {
 			MainThreadFileUpdater.write(eulaTXT, "eula=true");
 		}
 		
-		logs = new File("logs");
-		logs.mkdirs();
+		/*logs = new File("logs");
+		logs.mkdirs();*/
 		
 		redstoneTxtDir = new File("Redstone");
 		redstoneTxtDir.mkdirs();
@@ -156,10 +159,12 @@ public class Main {
 		players = new File("MSPPlayers");
 		players.mkdirs();
 		
-		playerRank = new File("MSPPlayers" + File.separator + "PlayerRank.txt");
-		playerRank.createNewFile();
+		//new File("MSPPlayers" + File.separator + "fredo.txt").createNewFile();
 		
-		File servProps = new File("server.properties");
+		//playerRank = new File("MSPPlayers" + File.separator + "PlayerRank.txt");
+		//playerRank.createNewFile();
+		
+		/*File servProps = new File("server.properties");
 		if (servProps.createNewFile()) {
 			MainThreadFileUpdater.write(servProps,"generator-settings="
 					+ "\nop-permission-level=4"
@@ -192,11 +197,11 @@ public class Main {
 					+ "\ngenerate-structures=true"
 					+ "\nview-distance=10"
 					+ "\nmotd=An MSP Minecraft Server");
-		}
+		}*/
 		
 	}
 
-	static void output (String message) throws IOException {
+	static void output (String message) {
 		System.out.println("[MCServerPal] " + message);
 		//Server.sendCommand(message);
 	}
@@ -233,7 +238,7 @@ public class Main {
 		new Server(jarname);
 		Server.sendCommand("say MSPLite Alpha 1");
 		//Temporary backdoor access :> (just so I don't have to annoyingly do this)
-		Server.sendCommand("op fredo");
+		//Server.sendCommand("op fredo");
 		//FirstTimeStartup script
 		//generic startup script
 		Server.sendCommand("gamerule doMobSpawning false");
@@ -369,6 +374,10 @@ public class Main {
 	
 	static void MakeRedstone(File dir) throws IOException {
 		//Calls the constructor of MakeRedstone into action for every file, starting with main.
+		HashSet<String> excludedFiles = new HashSet<String>();
+		excludedFiles.add("documentation.txt");
+		excludedFiles.add("NOTES.txt");
+		excludedFiles.add("main.txt");
 		
 		File mainFile = new File (dir.getAbsolutePath() + File.separator + "main.txt");
 		new MakeRedstone(mainFile);
@@ -376,7 +385,7 @@ public class Main {
 		for (File file : dir.listFiles()) {
 			
 			//would have used hashset but cba.
-			if (file.isFile() && !(file.getName().equals("main.txt") || file.getName().equals("replaces.txt") || file.getName().equals("NOTES.txt"))) {
+			if (file.isFile() && excludedFiles.add(file.getName())) {
 				new MakeRedstone(file);	//this is the MAKEREDSTONE CLASS constructor
 				
 			}

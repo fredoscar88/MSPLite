@@ -49,6 +49,7 @@ public class OutputThread extends Thread implements Runnable {
 				Main.dbOutput("OT check");
 				
 			} catch (Exception e) {
+				e.printStackTrace();
 				System.out.println("Something has gone terribly wrong! But I don't know what!");
 			}
 

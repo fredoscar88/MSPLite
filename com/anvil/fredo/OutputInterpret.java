@@ -1,6 +1,7 @@
 //MSPLite
 package com.anvil.fredo;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +16,10 @@ public class OutputInterpret {
 	String player;
 	String msgString;
 	
-	FileUpdater OIFileReader;
+	static FileUpdater OIFileReader;
+	
+	//File playerFile;
+	//String playerFilePath;
 	
 	public OutputInterpret() {
 		
@@ -48,21 +52,22 @@ public class OutputInterpret {
 	
 	public void PlayerAction(String player, List<String> cmd) throws IOException {
 		//Snags the players 'rank' or rather, in this case, checks to see if they are authorized.
-		boolean temp = true;
+		//boolean temp = true;
 		
 		//What would be better than a single file that stores each player and their rank, give each player a file
 		//and store all relevant data there. So there is a directory for player files, and then a fredo file for fredo, etc.
 		try {
-			rank = Integer.parseInt(OIFileReader.getSetting(Main.playerRank, player));
-			System.out.println("Rank of " + player + ": " + rank);
+			
+			rank = Integer.parseInt(returnPlayerSetting(player, "rank"));
+			System.out.println("Rank of " + player + ": " + rank + " role: " + returnPlayerSetting(player, "role"));
 		} catch (Exception e) {
-			System.out.println(player + " has no registered rank (or some other error occurred");
-			temp = false;
+			System.out.println(player + " has no registered rank or not a registered player (or some other error occurred");
+			//temp = false;
 		}
 		
 		switch (cmd.get(0)) {
 		case "!OpMe": if (rank >= 800) Server.sendCommand("op " + player); break;
-		case "!MkRdStone": if (rank >= 1000) {Server.sendCommand("say Making redstone..."); Main.MakeRedstone(Main.redstoneTxtDir);} break;
+		case "!MkRdStone": if (rank >= 1000) {Server.sendCommand("say Making redstone..."); Main.MakeRedstone(Main.redstoneTxtDir); Server.sendCommand("say Done!");} break;
 		case "!Exit": if (rank >= 1000) {Main.running = false; /*make that a setter >:V*/ Server.stopServer();} break;
 		}
 	}
@@ -107,11 +112,12 @@ public class OutputInterpret {
 		
 		for (int i = 3; i < input.length(); i++) {
 			if (input.charAt(i)== '>') {
-				temp.add(input.substring(1,i)); //Gets which player entered input (temp.get(0))
 				
-				temp.add(input.substring(i+2));	//Gets what the player input
+				temp.add(InputRemoveTeam(input.substring(1,i))); //Gets which player entered input (temp.get(0))
+				
+				temp.add(input.substring(i+2));	//Gets what the player input (temp.get(1))
 				//System.out.println();	//Prints a line for legibility's sake
-				temp.add("PLAYER");
+				temp.add("PLAYER");	//Gets who entered the input (temp.get(2))
 				
 				return temp;
 				
@@ -138,6 +144,36 @@ public class OutputInterpret {
 		return null;
 	}
 	
+	static private String InputRemoveTeam(String playerName) {
+		
+		System.out.println("Hello");
+		if (playerName.contains("\u00A7")) {	// \u00A7 is the section symbol
+			System.out.println("yolo");
+			for (int i = 5; i < playerName.length(); i++) { 
+				if (playerName.charAt(i) == '\u00A7') {
+					return playerName.substring(i+2);
+				}
+			}
+			return playerName;
+		}	
+		else {
+			return playerName;
+		}
+		
+		
+	}
+	
+	static public String returnPlayerSetting(String player, String setting) throws IOException {
+		String playerSetting;
+		String playerFilePath;
+		File playerFile;
+		
+		playerFilePath = (Main.players.getName() + File.separator + player + ".txt");
+		playerFile = new File(playerFilePath);
+		playerSetting = OIFileReader.getSetting(playerFile, setting);
+		
+		return playerSetting;
+	}
 }
 
 /*

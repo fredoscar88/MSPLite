@@ -68,7 +68,7 @@ public class Server {
 		OT.terminate();
 	}
 	
-	static public void sendCommand(String command) throws IOException {
+	static public void sendCommand(String command) {
 		
 		cmdSend.write(command);
 		cmdSend.write("\n");
