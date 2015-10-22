@@ -41,12 +41,40 @@ public class Block {
 	int funcYInt;
 	int funcZInt;
 	
-	public Block(String cbCommand, int type) {	//Standard constructor
+	static int setRP = -1;	//Reference point set. Default point is at same X, Z coords but lower Y as the main block.
+	
+	boolean auto;
+//	boolean conditional;
+	
+	//This constructor is called after all the other, 'normal' commands are entered into da system. :B
+	//So in this fashion, we can reset "set" again, as if a new file were entered. ;D
+	public Block(String cbCommand, int type, boolean conditional, int referencePointIndex) {	//For adding blocks to a reference point chain
 		
 		switch (type) {
 		case IMPULSE:	typeOfCB = " command_block "; break;
-		case CHAIN:		typeOfCB = " chain_command_block "; break;
-		case REPEAT:	typeOfCB = " repeating_command_block "; set++; currentBlock = 0; break;	//Set increments on REPEAT b/c the only instance we add a repeating block is when we have a new file. Current Block is also reset since it pertains to each individual file.
+		case CHAIN:		typeOfCB = " chain_command_block "; auto = true; break;
+		default:
+		}
+		currentBlock++;	//Yes, we could have put this in x such that x = getRP + currentBlock++ but I opted not to since we might need currentBlock for other raisins.
+		
+		x = getRPCoords(referencePointIndex)[0] + currentBlock;
+		y = 8;
+		z = getRPCoords(referencePointIndex)[2];
+		direction = EAST; //Again this is temp. for now we assume EAST but I imagine we can inherit this from some .props files. (TODO)
+		
+		command = commandMake(x,y,z,typeOfCB,direction,auto,conditional,cbCommand);
+		Server.sendCommand(command);	//One day, this will be something lovely, like writing to an output log file, then running that! (TODO) makes for easier debug I might add.
+	}
+	
+	public Block(String cbCommand, int type, boolean conditional) {	//Standard clockblock constructor
+		
+		auto = true;
+		conditional = false;
+		
+		switch (type) {
+		case IMPULSE:	typeOfCB = " command_block "; break;
+		case CHAIN:		typeOfCB = " chain_command_block "; auto = true; break;
+		case REPEAT:	typeOfCB = " repeating_command_block "; set++; currentBlock = 0; auto = false; break;	//Set increments on REPEAT b/c the only instance we add a repeating block is when we have a new file. Current Block is also reset since it pertains to each individual file.
 		default: 																				//if we had kept the idea that the files don't add new repeat CBs then it would have just built off the previous one, and then current block would not have been reset and set wouldn't exist
 		}
 		
@@ -57,7 +85,11 @@ public class Block {
 		z = firstZ + (funcZInt = funcZ(currentBlock, pattern));
 		direction = direction(funcXInt, funcYInt, funcZInt);	//The three parameters represent relative positions to the first block.
 		
+		Main.dbOutput("this should equal the below: " + commandMake(x,y,z,typeOfCB,direction,auto,conditional,cbCommand));
 		command = "setblock " + x + " " + y + " " + z + typeOfCB + direction + " replace {TrackOutput:0b,auto:1b,Command:" + cbCommand + "}";
+		Main.dbOutput("COMMAND FROM BLOCK: " + command);
+		
+		//command = commandMake(x,y,z,typeOfCB,direction,auto,conditional,cbCommand);
 		if (type==REPEAT) {command = command.replaceFirst(",auto:1b", ""); Server.sendCommand("setblock " + x + " " + (y-1) + " " + z + " minecraft:redstone_block");}
 		Server.sendCommand(command);
 		currentBlock++;
@@ -68,11 +100,37 @@ public class Block {
 		set = -1;
 		
 		firstX = mainCoords[0]; firstY = mainCoords[1]; firstZ = mainCoords[2];
+		if (firstY < 16) firstY = 16;	//Because I want a minimum y level :I
 		setFinalPattern(pattern);
 		currentBlock = 0;
-		new Block(cbCommand,REPEAT);
+		new Block(cbCommand,REPEAT, false);
 		
 	}	//This constructor is for when the main file is read. there will be another constructor for all other files.
+	
+	
+	
+	
+	public String commandMake(int x, int y, int z, String typeOfCB, int direction, boolean auto, boolean conditional, String cbCommand) {
+		StringBuilder sb = new StringBuilder("setblock ");
+		
+		if (conditional) direction += 8;	//Conditional blocks are a data value :V
+		typeOfCB = typeOfCB.trim(); 	//this should be temporary.
+		
+		sb.append(x);
+		sb.append(" ");
+		sb.append(y);
+		sb.append(" ");
+		sb.append(z);
+		sb.append(" ");
+		sb.append(typeOfCB);
+		sb.append(" ");
+		sb.append(direction);
+		sb.append(" replace {TrackOutput:0b");
+		if (auto) sb.append(",auto:1b");
+		sb.append(",Command:" + cbCommand + "}");
+		
+		return sb.toString();
+	}
 	
 	
 	static public int direction(int x, int y, int z) {
@@ -124,7 +182,7 @@ public class Block {
 		//directions is when Z increments (or decreases)
 	
 		if (pattern[X_PAT] != 1) {
-			Q = (Q % (2*pattern[X_PAT]));
+			Q = (Q % (2*pattern[X_PAT]));	//lol probably unnecessary. just leave Q alone here I tHINK. verify maybe.
 		}	else	{
 			Q = (Q % pattern[X_PAT]);
 		}
@@ -181,4 +239,49 @@ public class Block {
 	}
 	
 	
+	static public int[] getRPCoords(int setNum) {
+		//setRP++;
+		
+		//NOTE FOR THE MOMENT WE ASSUME THAT WE ARE IN FACT DEFAULTING TO Z+! I have no idea if the pattern supports negative numbers. But I'm pretty sure it doesn't.
+		//In fact I know it won't, since 'direction' will never point the block that way. :) unless I add it to >:V
+		return new int[] {firstX, 8, firstZ + (2*setNum)};	//We'll stick with y = 8 for now unless this needs changing. Should set a minimum y, as well.
+		//So it is only going to increase in the direction of Z. :). DEAL WITH IT >:V
+	}
+	
+	static public void delayRP(int rpIndex, int delay) {	//ew, the use of "7" and "8" disgusts me. No room for changing the pattern. Put it on the (TODO) list! we need to inc. it into a properties file, include the pattern stuff too. NOt to mention make it so we can switch directions :S
+		StringBuilder sb = new StringBuilder();
+		
+//		System.out.println("Block, delayRP. We've been called!");
+		int delayDistanceAway = ((delay+10)/4);
+//		Main.output("delayDistanceAway: " + Integer.toString(delayDistanceAway));
+		delay--;
+//		Main.output("delay: " + Integer.toString(delay));
+
+		int delayRepeaterTick;
+		Server.sendCommand("setblock " + (getRPCoords(rpIndex)[0] + (currentBlock+1)) + " 7 " + getRPCoords(rpIndex)[2] + " minecraft:stone_slab 8");
+		Server.sendCommand("setblock " + (getRPCoords(rpIndex)[0] + (currentBlock+1)) + " 8 " + getRPCoords(rpIndex)[2] + " minecraft:unpowered_comparator 1");
+		Server.sendCommand("setblock " + (getRPCoords(rpIndex)[0] + (currentBlock+delayDistanceAway)) + " 8 " + getRPCoords(rpIndex)[2] + " minecraft:command_block 5 replace {Command:blockdata ~-" + delayDistanceAway + " ~ ~ {SuccessCount:0b}}");
+		
+//		delayDistanceAway -= 2;
+		
+		for (int i = 1; i <= delayDistanceAway-2; i++) {
+			sb.append("setblock " + (getRPCoords(rpIndex)[0] + (currentBlock+1+i)) + " 7 " + getRPCoords(rpIndex)[2] + " minecraft:stone_slab 8");
+			Main.dbOutput(sb.toString());
+			Server.sendCommand(sb.toString());
+			sb = new StringBuilder();
+			
+			//Server.sendCommand("setblock " + getRPCoords(rpIndex)[0] + (currentBlock+1+i) + " 7 " + getRPCoords(rpIndex)[2] + " minecraft:stone_slab 8");
+			if (i == (delayDistanceAway-2)) delayRepeaterTick = ((delay-1)*4) + 1;
+			else delayRepeaterTick = 13;
+			delay -= 4;
+			sb.append("setblock " + (getRPCoords(rpIndex)[0] + (currentBlock+1+i)) + " 8 " + getRPCoords(rpIndex)[2] + " minecraft:unpowered_repeater " + delayRepeaterTick);
+			Main.dbOutput(sb.toString());
+			Server.sendCommand(sb.toString());
+			sb = new StringBuilder();
+			
+		}
+		
+		currentBlock += delayDistanceAway;
+		
+	}
 }

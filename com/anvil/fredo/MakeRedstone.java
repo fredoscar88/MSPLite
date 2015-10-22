@@ -3,11 +3,14 @@ package com.anvil.fredo;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
+//@SuppressWarnings("unused")
 public class MakeRedstone {
 
 	FileUpdater rsReader;
+	
 	String fileString;
 	boolean continueLineCheck = true;
 	List<String> lineList = new ArrayList<String>();
@@ -19,155 +22,172 @@ public class MakeRedstone {
 	
 	Block block;
 	
-	//Make sure not everything is in the constructor...
-	public MakeRedstone(File rsFile) throws IOException {
-		
-		MkRsConsole = new Console("Make Redstone console");
-		rsReader = new FileUpdater();
-		fileString = stringPrep(rsFile);
-		
-		lineList = getLines(fileString);
-		lineList = removeComments(lineList);
-		
-		
-		
-		//Specifically the main file
-		if (rsFile.getName().toLowerCase().equals("main.txt")) {
-			mainFile(lineList);
-				//We start on the fourth line b/c the first two are not commands and the third was already made into a block
-			for (int i = 3; i < lineList.size(); i++) {
-				new Block(lineList.get(i),Block.CHAIN);
-			}
-		} else {
-		
-			//All other files
-			System.out.println("Doing file \"" + rsFile.getName() + "\"");
-		
-			new Block(lineList.get(0),Block.REPEAT);	//We separate this from the others. When we use a REPEAT block, it
-														//indicates to the Block class that a new set is being called.
-			//Start on 2nd line here b/c the above already made the first line into a command
-			for (int i = 1; i <lineList.size(); i++) {
-				new Block(lineList.get(i),Block.CHAIN);
-			}
+	private boolean conditional;
+	
+	boolean referencePointAddTo = false;
+	int referencePointIndex;
+	
+	boolean isBlock;
+	
+	RedstoneFile mainRsFile;
+	
+	
+	//The fresh face of MakeRedstone
+	public MakeRedstone(File rsDir, HashSet<String> excludedFiles) throws IOException/*, NullPointerException */{
+		try {
+//			System.out.println("The fresh face of MakeRedstone engaged!");
+			MkRsConsole = new Console("Fresh face of MkRdStone");
+			ReferencePoint.resetReferencePoint();
 			
-			//Here we'd have the loop where we encounter the stuff line by line. Note we have to skip the First ? lines if main
-		
+			File mainFile = new File(rsDir.getName() + File.separator + "main.txt");
+			mainRsFile = new RedstoneFile(mainFile);
+			
+			lineList = mainRsFile.returnLines();	//list of main file
+			
+			//Sets the first block and defines the pattern for every block hence (mainFile method)
+			mainFile(lineList);	//Default calls the repeat block. I have confusingly named this the same thing as a variable.
+			lineList.remove(0); lineList.remove(0);	//gets rid of the two three lines, those lines aren't commands, and the third waas already set but is by default ignored in createredstone since it is the repeat one.
+//			System.out.println("first command :D but not because that was already set. " + lineList.get(0));	//informs me what is being set :<
+			
+			createRedstone(mainFile, lineList);	//The repeat block should be set before this is called for each file, after main.
+			
+			
+			//Basically everything above this comment is specifically for mainFile. :I
+			//Loop for the rest of the files
+			fileListLoop(rsDir, excludedFiles);
+			
+			
 			
 		}
+		catch (NullPointerException e) {
+			e.printStackTrace();
+			System.out.println("No main redstone file in directory, or some other error occurred.");
+		}
 		
+	}
+	
+	public void fileListLoop(File dir, HashSet<String> excludedFiles) throws IOException {
 		
+		RedstoneFile tempFile;
+		for (File file : dir.listFiles()) {
+			referencePointAddTo = false;
+			
+			if (file.isFile() && excludedFiles.add(file.getName())) {
+				tempFile = new RedstoneFile(file);
+				new Block(tempFile.returnLines().get(0),Block.REPEAT, false);	//yep. Repeat block is set b4 the file begins.
+				createRedstone(file, tempFile.returnLines());
+			}
+			
+			if (file.isDirectory()) {
+				fileListLoop(file, excludedFiles);
+			}
+			
+		}
 	}
 	
 	private void mainFile(List<String> lineList) {
 		
 		//Snags Pattern and First Block Position from the main file
 		try {
-			parsedLine = MkRsConsole.PConsoleParse(lineList.get(0));
-			parsedLine.remove(0);
-			for (int i = 0; i < 3; i++) {
-				mainFirstBlockCoords[i] = Main.pInt(parsedLine.get(i));
-				System.out.println("Coord: " + parsedLine.get(i));
-			}
 			
-			parsedLine = MkRsConsole.PConsoleParse(lineList.get(1));
-			parsedLine.remove(0);
-			for (int i = 0; i < 3; i++) {
-				mainPattern[i] = Math.abs(Main.pInt(parsedLine.get(i)));	//I don't want to find out how it reacts to a negative pattern
-				System.out.println("Pattern: " + parsedLine.get(i));
+
+			if (lineList.get(0).startsWith("POS")) {
+				
+				parsedLine = MkRsConsole.PConsoleParse(lineList.get(0));
+				parsedLine.remove(0);
+				for (int i = 0; i < 3; i++) {
+					mainFirstBlockCoords[i] = Main.pInt(parsedLine.get(i));
+					System.out.println("Coord: " + parsedLine.get(i));
+				}																//POS getter
 			}
-			
-			block = new Block(mainFirstBlockCoords,mainPattern,lineList.get(2));
+			else {
+				mainFirstBlockCoords = new int[] {-64,64,-64};
+			}
+//			----------------------------------------------------------------------------------------
+
+			if (lineList.get(1).startsWith("PAT")) {
+				parsedLine = MkRsConsole.PConsoleParse(lineList.get(1));
+				parsedLine.remove(0);
+				for (int i = 0; i < 3; i++) {
+					mainPattern[i] = Math.abs(Main.pInt(parsedLine.get(i)));	//I don't want to find out how it reacts to a negative pattern
+					System.out.println("Pattern: " + parsedLine.get(i));		
+				}																//PAT getter
+
+			}
+			else {
+				mainPattern = new int[] {2,192,16};
+			}
+//			System.out.println("First command? " + lineList.get(2));
+			block = new Block(mainFirstBlockCoords,mainPattern,lineList.get(2));	//The first actual line of stuff. This is also a REPEAT CB
 		}
 		catch (Exception e) {
+			e.printStackTrace();
 			mainFirstBlockCoords = new int[] {-64,64,-64};
 			mainPattern = new int[] {2,192,16};
 			block = new Block(mainFirstBlockCoords,mainPattern,"tell @p[r=2] Yeah an exception happened. You're exceptional!");
 		}
 	}
 	
-	
-	public List<String> removeComments(List<String> lines) {
-		int tempCondition = lines.size();
+	private void createRedstone (File file, List<String> list) throws IOException {
 		
-		for (int i = 0; i < tempCondition; i++) {
+		System.out.println("Doing file \"" + file.getName() + "\"");
+		
+		//Start on 2nd line here b/c the above already made the first line into a command
+		Main.dbOutput(file.getName() + " amt. of lines:  " + list.size() );
+		for (int i = 1; i < list.size(); i++) {
+			conditional = false;
+			Main.dbOutput("COMMAND: " + list.get(i));
+			interpretLine(list.get(i));
+			//if interpretLine fails, just comment it out and uncomment out below
+//			new Block(list.get(i),Block.CHAIN, conditional);
+		}
+	}
+	
+	private void interpretLine(String line) {
+		
+		isBlock = true;
+		
+		if (line.startsWith("CONIDITIONAL ")) {conditional = true; return;}	//Errr, this needs to NOT return;, and instead remove the CONDITIONAL from the start of the line (TODO)
+		if (line.contains("-> ")) {
+			Main.dbOutput("Reference point referenced! (MakeRedstone, interpretLine)");
+			String referencePoint = line.substring(line.lastIndexOf("->") + 3);
 			
-			if (lines.get(i).startsWith("#")) {
-				lines.remove(i);
-				i--;
-				tempCondition--;
-			}
+			Main.dbOutput("The point referenced is: " + referencePoint);
+			new ReferencePoint(referencePoint);
+			Main.dbOutput(ReferencePoint.getCoordsString(referencePoint));
+			//functional V: we should make sure this works
+			line = line.substring(0, line.lastIndexOf("->")-1);
+			line = line.concat(" /setblock " + ReferencePoint.getCoordsString(referencePoint) + " minecraft:redstone_block");
+		}
+		if (line.startsWith("*")) {
+			//Here is where we declare what a reference point points to :) i.e the chain CBs after a ref pt. Note that this is direction dependent but for the moment we assume EAST
+			isBlock = false;
 			
+			referencePointAddTo = true;	//For the remainder of this file, this is true.
+			String referencePoint = line.substring(1, line.length());
+			new ReferencePoint(referencePoint);
+			referencePointIndex = ReferencePoint.getRPIndex(referencePoint);
+			
+			Block.currentBlock = 0; //Make this into, like, a setter. And not a direct, reach-into-class-to-chance sort of deal. (TODO)
+			//Note it's 0 and not -1 like when a new makeRedstone is called.
+			new Block("setblock ~-1 ~ ~ minecraft:stained_glass 14", Block.IMPULSE, false, referencePointIndex);
+		}
+		if (line.startsWith("DELAY ")) {
+			line = line.substring(6/*line.lastIndexOf(" ")*/);	
+			int delay = Main.pInt(line);
+//			System.out.println(delay);
+			Block.delayRP(referencePointIndex, delay);
+			
+			isBlock = false;
 		}
 		
-		return lines;
+		Main.dbOutput(line);
+		
+		//If we're not adding to a reference point and the line we encountered is a single block, then..
+		if (!referencePointAddTo && isBlock) new Block(line,Block.CHAIN, conditional);
+		else if (isBlock) new Block(line,Block.CHAIN, conditional, referencePointIndex);
+		
 	}
-	
-	public List<String> getLines(String fileString) {
-		
-		List<String> tempList = new ArrayList<String>();
-		
-		for (int i = 0; continueLineCheck; i++) {
-			
-			while (fileString.startsWith(";")) {
-				fileString = fileString.substring(1);
-			}
-			
-			try {
-				
-				if (fileString.substring(i, i+1).equals(";")) {
-					
-					tempList.add(fileString.substring(0,i));
-					fileString = fileString.substring(i+1);
-					i=0;
-					
-					if (fileString.replace(";","_").equals(fileString)) {
-						
-						continueLineCheck = false;
-						return tempList;
-					}
-					
-					//make a new block here
-				}
-			}	catch (IndexOutOfBoundsException e) {
-				System.out.println("This line of code should not be reached! (MakeRedstone, List<String> filler loop)");
-				continueLineCheck = false;
-			}
-				
-			
-		}
-		
-		return null;	//Should not be reachable.
-	}
-	
-	public String stringPrep(File file) throws IOException {
-		String rsFileString;
-		
-		rsFileString = crossPlatformCompatibilityMaker(rsReader.read(file));
-		
-		rsFileString = rsFileString.replace(";", "");	//Removes any misc. semi-colons
-		rsFileString = rsFileString.replace("\n", ";");	//Replaces line breaks with semi-colons
-		while (rsFileString.endsWith(";")) {
-			rsFileString = rsFileString.substring(0,(rsFileString.length()-1));	//Removes semi-colons at end of string
-		}
-		rsFileString = rsFileString.concat(";");	//Sticks a single semi-colon on the end
-		
-		//Replaces all the shortcuts with their proper phrases in the string for parsey goodness
-		rsFileString = replaces(rsFileString);	//ATM this method does naught, as we haven't implemented replaces yet.
-		
-		//returns to be lexed (parsed?) into a List, composed of each line.
-		return rsFileString;
-	}
-	public String crossPlatformCompatibilityMaker(String str) {
-
-		return str.replaceAll(System.lineSeparator(), "\n");
-	}
-	public String replaces(String str) {
-		
-		return str;
-	}
-	
-	
-	
 }
 
 

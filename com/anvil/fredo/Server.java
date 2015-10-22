@@ -56,9 +56,9 @@ public class Server {
 		p = server.start();
 		cmdSend = new PrintWriter(p.getOutputStream());
 		
-		OT = new OutputThread(p, "Output Thread");
-		OT.start();
-		
+//		OT = new OutputThread(p, "Output Thread");
+//		OT.start();
+//		^^^^^^^^ Removed for Alpha 1.0
 		
 	}
 	

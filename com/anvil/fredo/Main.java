@@ -66,7 +66,7 @@ public class Main {
 		//NOTE If no args are specified in running the server (i.e you double click MSP.jar) it will cut off when
 		//it tries to find args[0]. No server will start, and the program crashes. This is intentional
 		//behavior as right now a console should be used to start the program as it is useless without a GUI.
-		System.out.println("Running MCServerPal! V1.0");
+		System.out.println("Running MCServerPal! Alpha V1.0");
 		System.out.println(args[0]);
 		AutoStart(args[0]);
 		
@@ -115,10 +115,10 @@ public class Main {
 			case "MakeRedstone": MakeRedstone(redstoneTxtDir); break;
 			case "MakeSpawnChunks": makeSpawnChunks(pInt(cmd.get(1)),pInt(cmd.get(2)),pInt(cmd.get(3)),pInt(cmd.get(4))); break;
 			case "ping": Server.sendCommand("say Pong!"); break;
-			case "debug": debug = !debug; break;
-			case "getrank": output(OutputInterpret.returnPlayerSetting(cmd.get(1), "rank")); break;
-			case "getrole":	output(OutputInterpret.returnPlayerSetting(cmd.get(1), "role")); break;
-			case "server":
+			case "debug": debug = !debug; System.out.println(debug); break;
+//			case "getrank": output(OutputInterpret.returnPlayerSetting(cmd.get(1), "rank")); break;
+//			case "getrole":	output(OutputInterpret.returnPlayerSetting(cmd.get(1), "role")); break;
+//			case "server":
 			
 			default : System.out.println("Type \"Help\" or \"?\" for help"); Main.ConsoleInput = null;
 			}
@@ -156,8 +156,8 @@ public class Main {
 		
 		//When a player joins for the first time, we can probably add them as rank 0 to the file using file updater.
 		//We'd use OIUpdater of course, no need to create conflict. I have to add a method to add a setting.
-		players = new File("MSPPlayers");
-		players.mkdirs();
+//		players = new File("MSPPlayers");
+//		players.mkdirs();
 		
 		//new File("MSPPlayers" + File.separator + "fredo.txt").createNewFile();
 		
@@ -219,7 +219,7 @@ public class Main {
 			result = y + (x % y);
 			if (result % 16 == 0) {
 				result = 0;
-				System.out.println("Bing bong!");
+				System.out.println("Bing bong!");	//<---WHY
 			}
 		}
 		else {
@@ -230,25 +230,24 @@ public class Main {
 		
 	}
 	
-	
 	//Automatically starts the server, put into a method because why not. Bear in mind since this is MSPLite there is
 	//only one server to start.
 	static void AutoStart(String jarname) throws IOException, InterruptedException {
 		
 		new Server(jarname);
-		Server.sendCommand("say MSPLite Alpha 1");
+		Server.sendCommand("say MSPLite Alpha 1.0");
 		//Temporary backdoor access :> (just so I don't have to annoyingly do this)
 		//Server.sendCommand("op fredo");
 		//FirstTimeStartup script
 		//generic startup script
-		Server.sendCommand("gamerule doMobSpawning false");
+	/*	Server.sendCommand("gamerule doMobSpawning false");
 		Server.sendCommand("gamerule doDaylightCycle false");
 		Server.sendCommand("gamerule doEntityDrops false");
 		Server.sendCommand("gamerule doTileDrops false");
-		Server.sendCommand("gamerule mobGriefing false");
+		Server.sendCommand("gamerule mobGriefing false");*/
 		//Server.sendCommand("gamerule sendCommandFeedback false");
-		Server.sendCommand("gamerule logAdminCommands false");
-		Server.sendCommand("gamerule commandBlockOutput false");
+	/*	Server.sendCommand("gamerule logAdminCommands false");
+		Server.sendCommand("gamerule commandBlockOutput false");*/
 		
 		//Here's where we'd access the script class and run the startup script
 		//Tempted to change name of MainThreadFileUpdater and that class entirely really to something saying
@@ -373,32 +372,50 @@ public class Main {
 	}
 	
 	static void MakeRedstone(File dir) throws IOException {
-		//Calls the constructor of MakeRedstone into action for every file, starting with main.
-		HashSet<String> excludedFiles = new HashSet<String>();
-		excludedFiles.add("documentation.txt");
-		excludedFiles.add("NOTES.txt");
-		excludedFiles.add("main.txt");
 		
-		File mainFile = new File (dir.getAbsolutePath() + File.separator + "main.txt");
-		new MakeRedstone(mainFile);
 		
-		for (File file : dir.listFiles()) {
+		
+		try {
+			//Calls the constructor of MakeRedstone into action for every file, starting with main.
 			
-			//would have used hashset but cba.
-			if (file.isFile() && excludedFiles.add(file.getName())) {
-				new MakeRedstone(file);	//this is the MAKEREDSTONE CLASS constructor
-				
-			}
-		}
-		for (File file : redstoneTxtDir.listFiles()) {
+			//List of files that won't be included. I might make this a bit more malleable, i.e read from a file.
+			HashSet<String> excludedFiles = new HashSet<String>();
+			excludedFiles.add("documentation.txt");
+			excludedFiles.add("NOTES.txt");
+			excludedFiles.add("main.txt");
+			excludedFiles.add("replaces.txt");
+			excludedFiles.add("output.txt");
 			
-			if (file.isDirectory()) {
-				MakeRedstone(file);	//this is the MAIN CLASS method
+//			----------------------
+			new MakeRedstone(dir, excludedFiles);
+//			----------------------
+			
+			
+			/*File mainFile = new File (dir.getAbsolutePath() + File.separator + "main.txt");
+			new MakeRedstone(mainFile);
+			
+			for (File file : dir.listFiles()) {
 				
+				//would have used hashset but cba.
+				if (file.isFile() && excludedFiles.add(file.getName())) {
+					new MakeRedstone(file);	//this is the MAKEREDSTONE CLASS constructor
+					
+				}
 			}
+			//move onto directories
+			for (File file : dir.listFiles()) {
+				
+				if (file.isDirectory()) {
+					MakeRedstone(file);	//this is the MAIN CLASS method
+					
+				}
+			}*/
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+			System.out.println("Error in creating redstone! Please check the redstone files for problems!");
 		}
 		
-		//move onto directories
 		
 	}
 
