@@ -7,6 +7,7 @@ import java.util.List;
 
 
 //to-do: add shortcuts
+//Maybe, possibly, quaintly, have this extend file. It would make shit so, much, easier, and more sense V:::::::::::::::
 public class RedstoneFile {
 
 	static FileUpdater RSFileReader = new FileUpdater();

@@ -32,13 +32,14 @@ public class MakeRedstone {
 	RedstoneFile mainRsFile;
 	
 	
-	//The fresh face of MakeRedstone
+	//The fresh face of MakeRedstone (the constructor below is legacy as of Alpha 1.0.1)
 	public MakeRedstone(File rsDir, HashSet<String> excludedFiles) throws IOException/*, NullPointerException */{
 		try {
 //			System.out.println("The fresh face of MakeRedstone engaged!");
 			MkRsConsole = new Console("Fresh face of MkRdStone");
 			ReferencePoint.resetReferencePoint();
 			
+			//ew legacy code
 			File mainFile = new File(rsDir.getName() + File.separator + "main.txt");
 			mainRsFile = new RedstoneFile(mainFile);
 			
@@ -66,6 +67,35 @@ public class MakeRedstone {
 		
 	}
 	
+	public MakeRedstone(File rsDir, HashSet<String> excludedFiles, boolean A101) throws IOException {	//The boolean literally exists just to distinguish this from the above constructor which Im not removing yet since I still need this to be functional
+		MkRsConsole = new Console("MakeRedstone function- Updated last: Alpha 1.0.1");
+		fileListLoop(rsDir, excludedFiles, A101);
+		
+	}
+	
+	public void fileListLoop(File dir, HashSet<String> excludedFiles, boolean A101) throws IOException {
+		
+		RedstoneFile tempFile;	
+		//reminder that we might make RedstoneFile extend File
+		for (File file : dir.listFiles()) {
+			referencePointAddTo = false;
+			
+			if (file.isFile() && excludedFiles.add(file.getName())) {
+				tempFile = new RedstoneFile(file);
+				//So instead of making the first block at the outset here, we are going to run createRedstone on this file to get access to that juicy juicy interpretLine
+				new Block(tempFile.returnLines().get(0),Block.REPEAT, false);	//yep. Repeat block is set b4 the file begins.
+				createRedstone(file, tempFile.returnLines());
+			}
+			
+			if (file.isDirectory()) {
+				fileListLoop(file, excludedFiles);	//Should directories get their own default params???? : <<<<<
+			}
+			
+		}
+	}
+	
+	
+	//Legacy
 	public void fileListLoop(File dir, HashSet<String> excludedFiles) throws IOException {
 		
 		RedstoneFile tempFile;
@@ -85,6 +115,7 @@ public class MakeRedstone {
 		}
 	}
 	
+	//Ew legacy code, remove pls :VVVV
 	private void mainFile(List<String> lineList) {
 		
 		//Snags Pattern and First Block Position from the main file
@@ -147,7 +178,7 @@ public class MakeRedstone {
 		
 		isBlock = true;
 		
-		if (line.startsWith("CONIDITIONAL ")) {conditional = true; return;}	//Errr, this needs to NOT return;, and instead remove the CONDITIONAL from the start of the line (TODO)
+		if (line.startsWith("CONDITIONAL ")) {conditional = true; line = line.substring(12);}	//Errr, this needs to NOT return;, and instead remove the CONDITIONAL from the start of the line (TODO)
 		if (line.contains("-> ")) {
 			Main.dbOutput("Reference point referenced! (MakeRedstone, interpretLine)");
 			String referencePoint = line.substring(line.lastIndexOf("->") + 3);

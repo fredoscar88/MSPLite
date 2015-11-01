@@ -44,10 +44,24 @@ public class Block {
 	static int setRP = -1;	//Reference point set. Default point is at same X, Z coords but lower Y as the main block.
 	
 	boolean auto;
+	
+	//New set, default parameters (implicit)
+	public Block(String cbCommand, boolean firstBlockCalled) {	//firstBlockCalled is to distinguish this from the legacy code below, the one that we normally use just for the main.txt
+		// set++; <--- should aonly be called if the player doesn't explicitly state any parameters. set is used to determine where the first block should go of a new set when default parameters are used.
+		
+	}
+	
+	//New set, altered parameters (explicit)
+	public Block(int[] startCoords, int[] pattern, String cbCommand, boolean firstBlockCalled) {
+		
+	}
+	
+	
 //	boolean conditional;
 	
 	//This constructor is called after all the other, 'normal' commands are entered into da system. :B
 	//So in this fashion, we can reset "set" again, as if a new file were entered. ;D
+	//This is going to be legacy code, too :<
 	public Block(String cbCommand, int type, boolean conditional, int referencePointIndex) {	//For adding blocks to a reference point chain
 		
 		switch (type) {
@@ -85,8 +99,9 @@ public class Block {
 		z = firstZ + (funcZInt = funcZ(currentBlock, pattern));
 		direction = direction(funcXInt, funcYInt, funcZInt);	//The three parameters represent relative positions to the first block.
 		
-		Main.dbOutput("this should equal the below: " + commandMake(x,y,z,typeOfCB,direction,auto,conditional,cbCommand));
-		command = "setblock " + x + " " + y + " " + z + typeOfCB + direction + " replace {TrackOutput:0b,auto:1b,Command:" + cbCommand + "}";
+		//Main.dbOutput("this should equal the below: " + commandMake(x,y,z,typeOfCB,direction,auto,conditional,cbCommand));
+		//command = "setblock " + x + " " + y + " " + z + typeOfCB + direction + " replace {TrackOutput:0b,auto:1b,Command:" + cbCommand + "}";
+		command = commandMake(x,y,z,typeOfCB,direction,auto,conditional,cbCommand);
 		Main.dbOutput("COMMAND FROM BLOCK: " + command);
 		
 		//command = commandMake(x,y,z,typeOfCB,direction,auto,conditional,cbCommand);
@@ -95,6 +110,7 @@ public class Block {
 		currentBlock++;
 	}
 
+	//EW LEGACY
 	public Block(int[] mainCoords, int[] pattern, String cbCommand) {	//main. Specifically main.
 		
 		set = -1;
@@ -108,6 +124,15 @@ public class Block {
 	}	//This constructor is for when the main file is read. there will be another constructor for all other files.
 	
 	
+	
+	public void setDefaultParams(int[] defCoords, int[] defPattern) {
+		firstX = defCoords[0]; firstY = defCoords[1]; firstZ = defCoords[2];
+		setFinalPattern(pattern);
+	}
+	public void reset() {
+		set = -1;
+		currentBlock = 0;	//Reset every time a new set is made, so we might not need this here. (TODO)
+	}
 	
 	
 	public String commandMake(int x, int y, int z, String typeOfCB, int direction, boolean auto, boolean conditional, String cbCommand) {

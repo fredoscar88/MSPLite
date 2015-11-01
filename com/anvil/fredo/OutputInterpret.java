@@ -29,6 +29,7 @@ public class OutputInterpret {
 	}
 	
 	public void Interpret(String input) throws IOException {
+		Main.dbOutput("OutputInterpret, Interpret: Interpret succesfully called.");
 		input = Reduce(input);
 		message = InputCheck(input);
 		
@@ -59,14 +60,14 @@ public class OutputInterpret {
 		try {
 			
 			rank = Integer.parseInt(returnPlayerSetting(player, "rank"));
-			//System.out.println("Rank of " + player + ": " + rank + " role: " + returnPlayerSetting(player, "role"));
+			System.out.println("(OutputInterpret, PlayerAction) Rank of " + player + ": " + rank + " role: " + returnPlayerSetting(player, "role"));
 		} catch (Exception e) {
 			//System.out.println(player + " has no registered rank or not a registered player (or some other error occurred");
 			//temp = false;
 		}
 		
 		switch (cmd.get(0)) {
-		//case "!OpMe": if (rank >= 800) Server.sendCommand("op " + player); break;
+		case "!OpMe": if (rank >= 800) Server.sendCommand("op " + player); break;
 		case "!MkRdStone": if (rank >= 1000) {Server.sendCommand("say Making redstone..."); Main.MakeRedstone(Main.redstoneTxtDir); Server.sendCommand("say Done!");} break;
 		case "!Exit": if (rank >= 1000) {Main.running = false; /*make that a setter >:V*/ Server.stopServer();} break;
 		}
@@ -168,6 +169,7 @@ public class OutputInterpret {
 		String playerFilePath;
 		File playerFile;
 		
+		//"players" is the directory MSPPlayers
 		playerFilePath = (Main.players.getName() + File.separator + player + ".txt");
 		playerFile = new File(playerFilePath);
 		playerSetting = OIFileReader.getSetting(playerFile, setting);

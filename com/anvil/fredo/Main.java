@@ -36,6 +36,7 @@ public class Main {
 	static File redstoneTxtDir;
 	static File playerRank;
 	static File players;
+	static File testPacket;
 	
 	//static BufferedWriter fileWriter;	//May not be needed
 	static String fileReadoutValue;
@@ -119,6 +120,7 @@ public class Main {
 //			case "getrank": output(OutputInterpret.returnPlayerSetting(cmd.get(1), "rank")); break;
 //			case "getrole":	output(OutputInterpret.returnPlayerSetting(cmd.get(1), "role")); break;
 //			case "server":
+			case "testpacket": output(MainThreadFileUpdater.read(testPacket)); Server.sendCommand(MainThreadFileUpdater.read(testPacket)); break;
 			
 			default : System.out.println("Type \"Help\" or \"?\" for help"); Main.ConsoleInput = null;
 			}
@@ -148,6 +150,9 @@ public class Main {
 			MainThreadFileUpdater.write(eulaTXT, "eula=true");
 		}
 		
+		testPacket = new File("TestPacket.txt");
+		testPacket.createNewFile();
+		
 		/*logs = new File("logs");
 		logs.mkdirs();*/
 		
@@ -156,8 +161,8 @@ public class Main {
 		
 		//When a player joins for the first time, we can probably add them as rank 0 to the file using file updater.
 		//We'd use OIUpdater of course, no need to create conflict. I have to add a method to add a setting.
-//		players = new File("MSPPlayers");
-//		players.mkdirs();
+		players = new File("MSPPlayers");
+		players.mkdirs();
 		
 		//new File("MSPPlayers" + File.separator + "fredo.txt").createNewFile();
 		
@@ -235,7 +240,7 @@ public class Main {
 	static void AutoStart(String jarname) throws IOException, InterruptedException {
 		
 		new Server(jarname);
-		Server.sendCommand("say MSPLite Alpha 1.0");
+		Server.sendCommand("say MSPLite Alpha 1.0.1");
 		//Temporary backdoor access :> (just so I don't have to annoyingly do this)
 		//Server.sendCommand("op fredo");
 		//FirstTimeStartup script

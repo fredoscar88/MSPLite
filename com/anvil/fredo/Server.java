@@ -18,6 +18,7 @@ import java.io.PrintWriter;
 public class Server {
 	
 	static OutputThread OT;
+	static ServerErrorStreams EOT;
 	
 	static PrintWriter cmdSend;
 	static Process p;
@@ -53,19 +54,25 @@ public class Server {
 		//with default memory options and it will enable people to use their own arguments
 		
 		
+		
 		p = server.start();
 		cmdSend = new PrintWriter(p.getOutputStream());
 		
-//		OT = new OutputThread(p, "Output Thread");
-//		OT.start();
-//		^^^^^^^^ Removed for Alpha 1.0
+		OT = new OutputThread(p, "Output Thread");
+		OT.start();
 		
+		EOT = new ServerErrorStreams(p, "Error Output Thread");
+		EOT.start();
+		
+//		^^^^^^^^ Removed for Alpha 1.0
+//		adedd back for, you know, it was a bit silly to remove
 	}
 	
 	static void stopServer() throws IOException {
 		
 		sendCommand("stop");
 		OT.terminate();
+		EOT.terminate();
 	}
 	
 	static public void sendCommand(String command) {

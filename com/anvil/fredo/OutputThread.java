@@ -16,6 +16,7 @@ public class OutputThread extends Thread implements Runnable {
 	BufferedWriter bw;
 	OutputInterpret oi;
 	
+	
 	boolean running;
 	
 	public OutputThread(Process p, String name) {
@@ -24,6 +25,7 @@ public class OutputThread extends Thread implements Runnable {
 		
 		threadName = name;
 	
+		
 		
 	}
 	
@@ -65,6 +67,7 @@ public class OutputThread extends Thread implements Runnable {
 	
 	public void start( ) {
 		this.running = true;
+		
 		
 		oi = new OutputInterpret();
 		
