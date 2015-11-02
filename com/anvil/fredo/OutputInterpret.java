@@ -68,14 +68,11 @@ public class OutputInterpret {
 		
 		switch (cmd.get(0)) {
 		case "!OpMe": if (rank >= 800) Server.sendCommand("op " + player); break;
-		case "!MkRdStone": if (rank >= 1000) {Server.sendCommand("say Making redstone..."); Main.MakeRedstone(Main.redstoneTxtDir); Server.sendCommand("say Done!");} break;
+		case "!MkRdStone": if (rank >= 1000) {Main.MakeRedstone(Main.redstoneTxtDir);} break;
+		case "!RplRdStone": if (rank >= 1000) {Main.replaceRedstone();} break;
 		case "!Exit": if (rank >= 1000) {Main.running = false; /*make that a setter >:V*/ Server.stopServer();} break;
 		}
 	}
-	
-	
-	
-	
 	
 	
 	static public String Reduce(String input) {
@@ -144,6 +141,7 @@ public class OutputInterpret {
 		
 		return null;
 	}
+//	^We will probably need to use this here to determine when a server has been stopped
 	
 	static private String InputRemoveTeam(String playerName) {
 		

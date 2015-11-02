@@ -9,7 +9,7 @@ import java.util.List;
 //@SuppressWarnings("unused")
 public class MakeRedstone {
 
-	FileUpdater rsReader;
+	FileUpdater rsReader = new FileUpdater();
 	
 	String fileString;
 	boolean continueLineCheck = true;
@@ -39,7 +39,7 @@ public class MakeRedstone {
 			MkRsConsole = new Console("Fresh face of MkRdStone");
 			ReferencePoint.resetReferencePoint();
 			
-			//ew legacy code
+			//ew legacy code (TODO)
 			File mainFile = new File(rsDir.getName() + File.separator + "main.txt");
 			mainRsFile = new RedstoneFile(mainFile);
 			
@@ -116,7 +116,7 @@ public class MakeRedstone {
 	}
 	
 	//Ew legacy code, remove pls :VVVV
-	private void mainFile(List<String> lineList) {
+	private void mainFile(List<String> lineList) throws IOException {
 		
 		//Snags Pattern and First Block Position from the main file
 		try {
@@ -128,7 +128,7 @@ public class MakeRedstone {
 				parsedLine.remove(0);
 				for (int i = 0; i < 3; i++) {
 					mainFirstBlockCoords[i] = Main.pInt(parsedLine.get(i));
-					System.out.println("Coord: " + parsedLine.get(i));
+//					System.out.println("Coord: " + parsedLine.get(i));
 				}																//POS getter
 			}
 			else {
@@ -141,7 +141,7 @@ public class MakeRedstone {
 				parsedLine.remove(0);
 				for (int i = 0; i < 3; i++) {
 					mainPattern[i] = Math.abs(Main.pInt(parsedLine.get(i)));	//I don't want to find out how it reacts to a negative pattern
-					System.out.println("Pattern: " + parsedLine.get(i));		
+//					System.out.println("Pattern: " + parsedLine.get(i));		
 				}																//PAT getter
 
 			}
@@ -174,11 +174,20 @@ public class MakeRedstone {
 		}
 	}
 	
-	private void interpretLine(String line) {
-		
+	//This is SOOOOO messy. Maybe, just, mah beh, we should separate these out to separate functions to clean it the fuck up. Even though that doesn't really make too much sense.
+	private void interpretLine(String line) throws IOException {
+//(TODO)Right, so I think at this point we could interpret comments and line breaks here. Im not sure we need to go through several complicated file preparations.
 		isBlock = true;
 		
+//(TODO)We need to include a warning with CONDITIONAL, because it will not automatically depend on the previous block and players need to be aware of that when doing patterns!
 		if (line.startsWith("CONDITIONAL ")) {conditional = true; line = line.substring(12);}	//Errr, this needs to NOT return;, and instead remove the CONDITIONAL from the start of the line (TODO)
+		if (line.startsWith("INIT ")) {
+			isBlock = false; 
+			line = line.substring(5); 
+//			System.out.println("Everything is going alright! (MakeRedstone, interpretLine): " + line);
+//			rsReader may not be initialized
+			rsReader.write(Main.redstoneOutputFile, line);
+		}
 		if (line.contains("-> ")) {
 			Main.dbOutput("Reference point referenced! (MakeRedstone, interpretLine)");
 			String referencePoint = line.substring(line.lastIndexOf("->") + 3);

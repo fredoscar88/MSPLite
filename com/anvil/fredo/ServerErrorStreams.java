@@ -1,5 +1,7 @@
 package com.anvil.fredo;
 
+//Deprecated
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.InputStreamReader;
@@ -35,10 +37,17 @@ public class ServerErrorStreams extends Thread implements Runnable {
 				
 				//This is probably not the best way to handle the errorstream but hey, it's going somewhere!
 				errorOutput = br.readLine();
-				Output(errorOutput);
+				//Main.dbOutput(errorOutput);
 				
 				
-				Main.dbOutput("EOT check");
+				//Main.dbOutput("EOT check");
+				
+				//Main.dbOutput(Boolean.toString(Server.p.isAlive()));
+				if (!Server.p.isAlive()) {
+					//Please don't continue using this! This is a very hashed out copy!!!
+					Server.stopServer();
+				}
+				
 				
 			} catch (Exception e) {
 				e.printStackTrace();

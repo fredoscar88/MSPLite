@@ -5,6 +5,8 @@ import java.io.IOException;
 @SuppressWarnings("unused")
 public class Block {
 
+	static FileUpdater BlockFileUpdater = new FileUpdater();
+	
 	static final int IMPULSE = 1;
 	static final int CHAIN = 2;
 	static final int REPEAT = 3;
@@ -61,8 +63,8 @@ public class Block {
 	
 	//This constructor is called after all the other, 'normal' commands are entered into da system. :B
 	//So in this fashion, we can reset "set" again, as if a new file were entered. ;D
-	//This is going to be legacy code, too :<
-	public Block(String cbCommand, int type, boolean conditional, int referencePointIndex) {	//For adding blocks to a reference point chain
+	//This is going to be legacy code, too :< (TODO)
+	public Block(String cbCommand, int type, boolean conditional, int referencePointIndex) throws IOException {	//For adding blocks to a reference point chain
 		
 		switch (type) {
 		case IMPULSE:	typeOfCB = " command_block "; break;
@@ -77,13 +79,13 @@ public class Block {
 		direction = EAST; //Again this is temp. for now we assume EAST but I imagine we can inherit this from some .props files. (TODO)
 		
 		command = commandMake(x,y,z,typeOfCB,direction,auto,conditional,cbCommand);
-		Server.sendCommand(command);	//One day, this will be something lovely, like writing to an output log file, then running that! (TODO) makes for easier debug I might add.
+		enterCommand(command);	//One day, this will be something lovely, like writing to an output log file, then running that! (TODO) makes for easier debug I might add.
 	}
 	
-	public Block(String cbCommand, int type, boolean conditional) {	//Standard clockblock constructor
+	public Block(String cbCommand, int type, boolean conditional) throws IOException {	//Standard clockblock constructor
 		
 		auto = true;
-		conditional = false;
+//		conditional = false; Like WHYYYYYYYY
 		
 		switch (type) {
 		case IMPULSE:	typeOfCB = " command_block "; break;
@@ -105,13 +107,13 @@ public class Block {
 		Main.dbOutput("COMMAND FROM BLOCK: " + command);
 		
 		//command = commandMake(x,y,z,typeOfCB,direction,auto,conditional,cbCommand);
-		if (type==REPEAT) {command = command.replaceFirst(",auto:1b", ""); Server.sendCommand("setblock " + x + " " + (y-1) + " " + z + " minecraft:redstone_block");}
-		Server.sendCommand(command);
+		if (type==REPEAT) {command = command.replaceFirst(",auto:1b", ""); enterCommand("setblock " + x + " " + (y-1) + " " + z + " minecraft:redstone_block");}
+		enterCommand(command);
 		currentBlock++;
 	}
 
-	//EW LEGACY
-	public Block(int[] mainCoords, int[] pattern, String cbCommand) {	//main. Specifically main.
+	//EW LEGACY (TODO)
+	public Block(int[] mainCoords, int[] pattern, String cbCommand) throws IOException {	//main. Specifically main.
 		
 		set = -1;
 		
@@ -123,6 +125,18 @@ public class Block {
 		
 	}	//This constructor is for when the main file is read. there will be another constructor for all other files.
 	
+	
+	private static void enterCommand(String command) throws IOException {
+//		Main.output("(Block, enterCommand) enterCommand testing: " + command);
+//		enterCommand(command);
+		BlockFileUpdater.write(Main.redstoneOutputFile, command);
+		
+	}
+	
+	
+//	--------------------------------------------------------------------------------------------------------
+//	--------------------------------------------------------------------------------------------------------
+//	--------------------------------------------------------------------------------------------------------
 	
 	
 	public void setDefaultParams(int[] defCoords, int[] defPattern) {
@@ -273,7 +287,7 @@ public class Block {
 		//So it is only going to increase in the direction of Z. :). DEAL WITH IT >:V
 	}
 	
-	static public void delayRP(int rpIndex, int delay) {	//ew, the use of "7" and "8" disgusts me. No room for changing the pattern. Put it on the (TODO) list! we need to inc. it into a properties file, include the pattern stuff too. NOt to mention make it so we can switch directions :S
+	static public void delayRP(int rpIndex, int delay) throws IOException {	//ew, the use of "7" and "8" disgusts me. No room for changing the pattern. Put it on the (TODO) list! we need to inc. it into a properties file, include the pattern stuff too. NOt to mention make it so we can switch directions :S
 		StringBuilder sb = new StringBuilder();
 		
 //		System.out.println("Block, delayRP. We've been called!");
@@ -283,16 +297,16 @@ public class Block {
 //		Main.output("delay: " + Integer.toString(delay));
 
 		int delayRepeaterTick;
-		Server.sendCommand("setblock " + (getRPCoords(rpIndex)[0] + (currentBlock+1)) + " 7 " + getRPCoords(rpIndex)[2] + " minecraft:stone_slab 8");
-		Server.sendCommand("setblock " + (getRPCoords(rpIndex)[0] + (currentBlock+1)) + " 8 " + getRPCoords(rpIndex)[2] + " minecraft:unpowered_comparator 1");
-		Server.sendCommand("setblock " + (getRPCoords(rpIndex)[0] + (currentBlock+delayDistanceAway)) + " 8 " + getRPCoords(rpIndex)[2] + " minecraft:command_block 5 replace {Command:blockdata ~-" + delayDistanceAway + " ~ ~ {SuccessCount:0b}}");
+		enterCommand("setblock " + (getRPCoords(rpIndex)[0] + (currentBlock+1)) + " 7 " + getRPCoords(rpIndex)[2] + " minecraft:stone_slab 8");
+		enterCommand("setblock " + (getRPCoords(rpIndex)[0] + (currentBlock+1)) + " 8 " + getRPCoords(rpIndex)[2] + " minecraft:unpowered_comparator 1");
+		enterCommand("setblock " + (getRPCoords(rpIndex)[0] + (currentBlock+delayDistanceAway)) + " 8 " + getRPCoords(rpIndex)[2] + " minecraft:command_block 5 replace {Command:blockdata ~-" + delayDistanceAway + " ~ ~ {SuccessCount:0b}}");
 		
 //		delayDistanceAway -= 2;
 		
 		for (int i = 1; i <= delayDistanceAway-2; i++) {
 			sb.append("setblock " + (getRPCoords(rpIndex)[0] + (currentBlock+1+i)) + " 7 " + getRPCoords(rpIndex)[2] + " minecraft:stone_slab 8");
 			Main.dbOutput(sb.toString());
-			Server.sendCommand(sb.toString());
+			enterCommand(sb.toString());
 			sb = new StringBuilder();
 			
 			//Server.sendCommand("setblock " + getRPCoords(rpIndex)[0] + (currentBlock+1+i) + " 7 " + getRPCoords(rpIndex)[2] + " minecraft:stone_slab 8");
@@ -301,7 +315,7 @@ public class Block {
 			delay -= 4;
 			sb.append("setblock " + (getRPCoords(rpIndex)[0] + (currentBlock+1+i)) + " 8 " + getRPCoords(rpIndex)[2] + " minecraft:unpowered_repeater " + delayRepeaterTick);
 			Main.dbOutput(sb.toString());
-			Server.sendCommand(sb.toString());
+			enterCommand(sb.toString());
 			sb = new StringBuilder();
 			
 		}

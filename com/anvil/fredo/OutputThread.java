@@ -44,19 +44,24 @@ public class OutputThread extends Thread implements Runnable {
 				//an exception. Will test.
 				//That is exactly what was happening. I've got it working how I want it now.
 				output = br.readLine();
-				oi.Interpret(output);
+				try {
+					oi.Interpret(output);
+				}
+				catch (Exception e){
+					e.printStackTrace();
+				}
 				
 				//OutputInterpret here!
 				
 				Main.dbOutput("OT check");
-				
+				Main.dbOutput(Boolean.toString(Server.p.isAlive()));
 			} catch (Exception e) {
 				e.printStackTrace();
 				System.out.println("Something has gone terribly wrong! But I don't know what!");
 			}
 
 		}
-			
+		
 		
 		return;
 		

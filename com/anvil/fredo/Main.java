@@ -21,6 +21,8 @@ public class Main {
 
 	//How much of this shit is unused. I mean seriously.
 	
+	static final String VERSION = "Alpha V1.0.2";
+	
 	static String ConsoleInput/* = "start"*/; 	//temporarily defaults to start //(not right now)
 	static String ConsoleCmd;	//
 	static Scanner ConsoleReader;	//Scanner to acquire input
@@ -37,6 +39,8 @@ public class Main {
 	static File playerRank;
 	static File players;
 	static File testPacket;
+	static File redstoneOutputFile;
+	static File mspProps;
 	
 	//static BufferedWriter fileWriter;	//May not be needed
 	static String fileReadoutValue;
@@ -63,21 +67,23 @@ public class Main {
 		//Rename class to FileAccess?
 		MainThreadFileUpdater = new FileUpdater();
 		addDirectories();
-		
 		//NOTE If no args are specified in running the server (i.e you double click MSP.jar) it will cut off when
 		//it tries to find args[0]. No server will start, and the program crashes. This is intentional
 		//behavior as right now a console should be used to start the program as it is useless without a GUI.
-		System.out.println("Running MCServerPal! Alpha V1.0");
-		System.out.println(args[0]);
-		AutoStart(args[0]);
-		
+//		For the above it is now going to read from a general MSP properties folder. No biggy. Note to self, separate redstone into world files for easyness
+		System.out.println("Running MCServerPal! " + VERSION);
+//		System.out.println(args[0]);
+//		AutoStart(args[0]);
 		
 		cmd = new ArrayList<String>();
 		
-		//cnsAutostart();	//This method, when called with no parameters, will automatically start whatever server is specified, if any
-						//if called with parameters it changes the autostart option
-		
 		mainConsole = new Console("Main Console");
+	
+//		May need try/catch around this
+//		Also tempted to add a String[] return type to the console class just cus
+		List<String> tempList = mainConsole.PConsoleParse(MainThreadFileUpdater.getSetting(mspProps, "Startup_Arguments"));
+		AutoStart(tempList);
+		
 		mainRunning(mainConsole);
 		
 		output("MCServerPal closing");
@@ -117,10 +123,11 @@ public class Main {
 			case "MakeSpawnChunks": makeSpawnChunks(pInt(cmd.get(1)),pInt(cmd.get(2)),pInt(cmd.get(3)),pInt(cmd.get(4))); break;
 			case "ping": Server.sendCommand("say Pong!"); break;
 			case "debug": debug = !debug; System.out.println(debug); break;
+			case "ReplaceRedstone": replaceRedstone(); break;
 //			case "getrank": output(OutputInterpret.returnPlayerSetting(cmd.get(1), "rank")); break;
 //			case "getrole":	output(OutputInterpret.returnPlayerSetting(cmd.get(1), "role")); break;
 //			case "server":
-			case "testpacket": output(MainThreadFileUpdater.read(testPacket)); Server.sendCommand(MainThreadFileUpdater.read(testPacket)); break;
+//			case "testpacket": output(MainThreadFileUpdater.read(testPacket)); Server.sendCommand(MainThreadFileUpdater.read(testPacket)); break;
 			
 			default : System.out.println("Type \"Help\" or \"?\" for help"); Main.ConsoleInput = null;
 			}
@@ -144,14 +151,15 @@ public class Main {
 
 	//Adds in any necessary directories, should they not exist
 	static void addDirectories() throws IOException {
-
+//(TODO)Add output if MSP adds directories/files
+		
 		eulaTXT = new File("eula.txt");
 		if (eulaTXT.createNewFile()) {
 			MainThreadFileUpdater.write(eulaTXT, "eula=true");
 		}
 		
-		testPacket = new File("TestPacket.txt");
-		testPacket.createNewFile();
+//		testPacket = new File("TestPacket.txt");
+//		testPacket.createNewFile();
 		
 		/*logs = new File("logs");
 		logs.mkdirs();*/
@@ -159,10 +167,25 @@ public class Main {
 		redstoneTxtDir = new File("Redstone");
 		redstoneTxtDir.mkdirs();
 		
+		redstoneOutputFile = new File("Redstone" + File.separator + "output.txt");
+		redstoneOutputFile.createNewFile();
+		
 		//When a player joins for the first time, we can probably add them as rank 0 to the file using file updater.
 		//We'd use OIUpdater of course, no need to create conflict. I have to add a method to add a setting.
 		players = new File("MSPPlayers");
 		players.mkdirs();
+		
+		mspProps = new File("MSP.properties");
+		if (mspProps.createNewFile()) {
+			MainThreadFileUpdater.write(mspProps, "#Pattern=2 64 16"
+					+ "\n#First_Block=-48 64 -48"
+					+ "\n#Direction=EAST"
+					+ "\n#^ As of now these are not checked. I'm only laying the ground work for the future,"
+					+ "\n#I just wanted to get this update out quick-like to get on github -fredo"
+//					+ "\nsilent-mode=false"
+					+ "\nStartup_Arguments=java -Xms1024M -Xmx1024M -jar server.jar");
+		}
+		
 		
 		//new File("MSPPlayers" + File.separator + "fredo.txt").createNewFile();
 		
@@ -240,7 +263,7 @@ public class Main {
 	static void AutoStart(String jarname) throws IOException, InterruptedException {
 		
 		new Server(jarname);
-		Server.sendCommand("say MSPLite Alpha 1.0.1");
+		Server.sendCommand("say MSPLite " + VERSION);
 		//Temporary backdoor access :> (just so I don't have to annoyingly do this)
 		//Server.sendCommand("op fredo");
 		//FirstTimeStartup script
@@ -258,6 +281,12 @@ public class Main {
 		//Tempted to change name of MainThreadFileUpdater and that class entirely really to something saying
 		//"FileAccess" as it is more of an access thing.
 		
+	}
+	static void AutoStart(List<String> servArgs) throws IOException, InterruptedException {
+		
+		new Server(servArgs);
+		Server.sendCommand("say MSPLite " + VERSION);
+	
 	}
 	
 	//---------------------------------------------------------------------------------------------------------
@@ -283,6 +312,7 @@ public class Main {
 					//+ "\nautostart"
 					+ "\nMakeSpawnChunks"
 					+ "\nMakeRedstone"
+					+ "\nReplaceRedstone"
 					+ "\nping"
 					+ "\nexit");
 		}
@@ -321,6 +351,11 @@ public class Main {
 		case "exit":
 			System.out.println("Usage: \"exit\""
 					+ "\nExits MCServerPal");
+			break;
+		case "ReplaceRedstone":
+			System.out.println("Usage: \"ReplaceRedstone\""
+					+ "\nReads the output.txt file to the server (does not go through the process of making it)");
+			
 			break;
 		case "ping":
 			System.out.println("Usage: \"ping\""
@@ -392,8 +427,18 @@ public class Main {
 			excludedFiles.add("output.txt");
 			
 //			----------------------
-			new MakeRedstone(dir, excludedFiles);
 //			----------------------
+			Server.sendCommand("Making redstone...");
+			
+			MainThreadFileUpdater.clearFile(redstoneOutputFile);
+			new MakeRedstone(dir, excludedFiles);
+			MainThreadFileUpdater.writeNoLineBreak(redstoneOutputFile, "say Done!");
+			
+			Server.sendCommand(MainThreadFileUpdater.read(redstoneOutputFile));
+//			----------------------
+//			----------------------
+//			and here, here we would read from the output file
+			
 			
 			
 			/*File mainFile = new File (dir.getAbsolutePath() + File.separator + "main.txt");
@@ -422,6 +467,9 @@ public class Main {
 		}
 		
 		
+	}
+	static void replaceRedstone() throws IOException {
+		Server.sendCommand(MainThreadFileUpdater.read(redstoneOutputFile));
 	}
 
 	

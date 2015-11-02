@@ -17,13 +17,14 @@ public class RedstoneFile {
 	
 	List<String> lineList;
 	
+	//Where all of the file prep happens, might extend File someday (TODO)
 	public RedstoneFile(File file) throws IOException {
 		
 		lineList = new ArrayList<String>();
 		continueLineCheck = true;
 		
 		fileContents = RSFileReader.read(file);
-		Main.dbOutput("RS FILE " + file.getName());
+		Main.dbOutput("RS FILE " + file.getName());	//Alerts the main console
 		/*Main.output(fileContents + " <<<< RedstoneFile constructor message");*/
 		fileContents = stringPrep(fileContents);
 		
@@ -43,12 +44,20 @@ public class RedstoneFile {
 		int tempCondition = lines.size();
 		
 		for (int i = 0; i < tempCondition; i++) {
-			
+//			(TODO) I might need trycatch here..
+//			the i-- is because when we remove the thing from the directory it shifts all other indices to the left so 
+//			the -- is accounting for that, and ofc tempcondition (being the size of the List) also accounts
 			if (lines.get(i).startsWith("#")) {
 				lines.remove(i);
 				i--;
 				tempCondition--;
 			}
+		/*	if (lines.get(i).startsWith("//")) { <<<<<<<<<<<<<<<Maybe else if????
+				lines.remove(i);
+				i--;
+				tempCondition--;
+			}
+			Hey yah that ^ is well, weird. It seems to break it. Notably only when a file ends with a line break and a line starting with #*/
 			
 		}
 		

@@ -11,6 +11,7 @@ import java.io.FileReader;
 import java.io.BufferedReader;
 import java.io.FileWriter;
 import java.io.BufferedWriter;
+import java.io.RandomAccessFile;
 
 public class FileUpdater {
 
@@ -34,10 +35,33 @@ public class FileUpdater {
 		//file
 	}
 	
+	public void clearFile(File file) throws IOException {
+
+		writer = new BufferedWriter(new FileWriter(file));
+		writer.write("say Inserting redstone!\n");
+		writer.flush();
+		writer.close();
+		
+	}
+	
 	public void write(File file, String toWrite) throws IOException {
+		
 		
 		writer = new BufferedWriter(new FileWriter(file, true));
 		writer.write(toWrite);
+		writer.write("\n");
+		writer.flush();
+	}
+	public void writeNoLineBreak(File file, String toWrite) throws IOException {
+		
+		
+		writer = new BufferedWriter(new FileWriter(file, true));
+		writer.write(toWrite);
+		writer.flush();
+	}
+	public void writeNewLineBreak(File file) throws IOException {
+		
+		writer = new BufferedWriter(new FileWriter(file, true));
 		writer.write("\n");
 		writer.flush();
 	}
@@ -82,6 +106,7 @@ public class FileUpdater {
 				
 				if (line.startsWith(setting)) {
 					fileReadout = line.substring(setting.length()+1);	//Plus 1 because each setting has an = sign after it that needs to be disregarded
+					//(TODO) ^While that above will work, we should replace it with .lastIndexOf("=") as that is probably a smarter way of doing it
 					
 					if (fileReadout.equals("")) return null;
 					
@@ -113,10 +138,12 @@ public class FileUpdater {
 		tempFile = tempFile.replace(setting + "=" + tempSetting, setting + "=" + changeTo);
 		//Replaces the setting with what we want to change it to
 		
-		writer = new BufferedWriter(new FileWriter(file, false));
+		//I actually have a method in this file to do this but I guess Im reserving it for outsider usage?
+		writer = new BufferedWriter(new FileWriter(file, false));	//False because we are not adding onto the file
 		writer.write(tempFile);		//Writes the new file
 		writer.flush();
 		//writer.close();
+		//NOTE TO SELF IT MAY BE THAT WHEN WE WRITE FROM THE BEGINNING OF THE FILE WE MAY NOT REMOVE ALL REMNAMTS OF THE OLD SETTING! (TODO)
 	}
 	
 }
