@@ -16,5 +16,6 @@ public class BlockFirst extends Block {
 		super(startCoords, pattern, cbCommand, called);
 	}
 	
+	//Hey you, store the location of each repeating block please, we need it later to start/stop the system (TODO)
 
 }

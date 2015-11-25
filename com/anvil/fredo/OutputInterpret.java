@@ -29,7 +29,7 @@ public class OutputInterpret {
 	}
 	
 	public void Interpret(String input) throws IOException {
-		Main.dbOutput("OutputInterpret, Interpret: Interpret succesfully called.");
+//		Main.dbOutput("OutputInterpret, Interpret: Interpret succesfully called.");
 		input = Reduce(input);
 		message = InputCheck(input);
 		

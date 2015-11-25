@@ -21,7 +21,7 @@ public class Main {
 
 	//How much of this shit is unused. I mean seriously.
 	
-	static final String VERSION = "Alpha V1.0.2";
+	static final String VERSION = "Alpha V1.0.3";
 	
 	static String ConsoleInput/* = "start"*/; 	//temporarily defaults to start //(not right now)
 	static String ConsoleCmd;	//
@@ -40,6 +40,7 @@ public class Main {
 	static File players;
 	static File testPacket;
 	static File redstoneOutputFile;
+	static File redstoneMainFile;
 	static File mspProps;
 	
 	//static BufferedWriter fileWriter;	//May not be needed
@@ -170,6 +171,9 @@ public class Main {
 		redstoneOutputFile = new File("Redstone" + File.separator + "output.txt");
 		redstoneOutputFile.createNewFile();
 		
+		redstoneMainFile = new File("Redstone" + File.separator + "main.txt");
+		redstoneMainFile.createNewFile();
+		
 		//When a player joins for the first time, we can probably add them as rank 0 to the file using file updater.
 		//We'd use OIUpdater of course, no need to create conflict. I have to add a method to add a setting.
 		players = new File("MSPPlayers");
@@ -262,7 +266,7 @@ public class Main {
 	//only one server to start.
 	static void AutoStart(String jarname) throws IOException, InterruptedException {
 		
-		new Server(jarname);
+//		new Server(jarname);
 		Server.sendCommand("say MSPLite " + VERSION);
 		//Temporary backdoor access :> (just so I don't have to annoyingly do this)
 		//Server.sendCommand("op fredo");

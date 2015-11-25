@@ -53,8 +53,8 @@ public class OutputThread extends Thread implements Runnable {
 				
 				//OutputInterpret here!
 				
-				Main.dbOutput("OT check");
-				Main.dbOutput(Boolean.toString(Server.p.isAlive()));
+//				Main.dbOutput("OT check");
+//				Main.dbOutput(Boolean.toString(Server.p.isAlive()));
 			} catch (Exception e) {
 				e.printStackTrace();
 				System.out.println("Something has gone terribly wrong! But I don't know what!");

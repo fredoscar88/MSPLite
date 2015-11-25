@@ -178,6 +178,7 @@ public class MakeRedstone {
 	private void interpretLine(String line) throws IOException {
 //(TODO)Right, so I think at this point we could interpret comments and line breaks here. Im not sure we need to go through several complicated file preparations.
 		isBlock = true;
+		System.out.println("Hey, we are interpreting the line now.");
 		
 //(TODO)We need to include a warning with CONDITIONAL, because it will not automatically depend on the previous block and players need to be aware of that when doing patterns!
 		if (line.startsWith("CONDITIONAL ")) {conditional = true; line = line.substring(12);}	//Errr, this needs to NOT return;, and instead remove the CONDITIONAL from the start of the line (TODO)
@@ -188,7 +189,10 @@ public class MakeRedstone {
 //			rsReader may not be initialized
 			rsReader.write(Main.redstoneOutputFile, line);
 		}
+		System.out.println("The next if statement is where we are made or broken");
 		if (line.contains("-> ")) {
+			System.out.println("We are made!");
+//(TODO) InterpretLine is not called when the first block is placed in! (note that this is a legacy issue, not tested w/new system
 			Main.dbOutput("Reference point referenced! (MakeRedstone, interpretLine)");
 			String referencePoint = line.substring(line.lastIndexOf("->") + 3);
 			
