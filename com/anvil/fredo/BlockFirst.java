@@ -1,8 +1,16 @@
 package com.anvil.fredo;
 
+import java.io.IOException;
+
 public class BlockFirst extends Block {
 
+	public BlockFirst(String cbCommand, int type, boolean conditional)
+			throws IOException {
+		super(cbCommand, type, conditional);
+		// TODO Auto-generated constructor stub
+	}
 
+/*
 	//(TODO) Hey guess what, we need to have a function in makeredstone that sets the pattern in Block, 
 	//because we have to replace that function in the legacy code (the old Block main constructor, that one set the PAT)
 	
@@ -17,5 +25,5 @@ public class BlockFirst extends Block {
 	}
 	
 	//Hey you, store the location of each repeating block please, we need it later to start/stop the system (TODO)
-
+*/
 }

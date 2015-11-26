@@ -68,7 +68,7 @@ public class OutputInterpret {
 		
 		switch (cmd.get(0)) {
 		case "!OpMe": if (rank >= 800) Server.sendCommand("op " + player); break;
-		case "!MkRdStone": if (rank >= 1000) {Main.MakeRedstone(Main.redstoneTxtDir);} break;
+		case "!MkRdStone": if (rank >= 1000) {Main.MakeRedstone();} break;
 		case "!RplRdStone": if (rank >= 1000) {Main.replaceRedstone();} break;
 		case "!Exit": if (rank >= 1000) {Main.running = false; /*make that a setter >:V*/ Server.stopServer();} break;
 		}

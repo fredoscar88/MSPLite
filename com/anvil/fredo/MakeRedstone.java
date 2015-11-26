@@ -20,16 +20,22 @@ public class MakeRedstone {
 	int[] mainFirstBlockCoords = new int[3];
 	int[] mainPattern = new int[3];
 	
-	Block block;
+	public Block block;
+	static BlockSet currentBlockSet;
+	
 	
 	private boolean conditional;
 	
 	boolean referencePointAddTo = false;
 	int referencePointIndex;
 	
-	boolean isBlock;
+	static boolean isBlock;
 	
 	RedstoneFile mainRsFile;
+	
+	boolean stop = false;
+	
+	
 	
 	
 	//The fresh face of MakeRedstone (the constructor below is legacy as of Alpha 1.0.1)
@@ -75,23 +81,30 @@ public class MakeRedstone {
 	
 	public void fileListLoop(File dir, HashSet<String> excludedFiles, boolean A101) throws IOException {
 		
+		Main.dbOutput("All's well and good (filelistloop)");
+		//there used to be a referencePointAddTo set false here, ut I removed it in favor of using the NEW SET colon command power to do that
 		RedstoneFile tempFile;	
 		//reminder that we might make RedstoneFile extend File
 		for (File file : dir.listFiles()) {
-			referencePointAddTo = false;
 			
-			if (file.isFile() && excludedFiles.add(file.getName())) {
+			
+			if (file.isFile() && excludedFiles.add(file.getName()) && !stop) {	//Tests to see if it is a file (not a driectory) and that it isn't on the excluded files hashset
 				tempFile = new RedstoneFile(file);
 				//So instead of making the first block at the outset here, we are going to run createRedstone on this file to get access to that juicy juicy interpretLine
-				new Block(tempFile.returnLines().get(0),Block.REPEAT, false);	//yep. Repeat block is set b4 the file begins.
+//				new Block(tempFile.returnLines().get(0),Block.REPEAT, false);	//yep. Repeat block is set b4 the file begins.
 				createRedstone(file, tempFile.returnLines());
 			}
 			
-			if (file.isDirectory()) {
+			if (file.isDirectory() && !stop) {
 				fileListLoop(file, excludedFiles);	//Should directories get their own default params???? : <<<<<
 			}
 			
 		}
+//		(Debug)
+		
+		Main.dbOutput("PAT: " + Integer.toString(currentBlockSet.PatX) + " " + Integer.toString(currentBlockSet.PatY) + " " + Integer.toString(currentBlockSet.PatZ));
+		Main.dbOutput("POS: " + Integer.toString(currentBlockSet.PosX) + " " + Integer.toString(currentBlockSet.PosY) + " " + Integer.toString(currentBlockSet.PosZ));
+		
 	}
 	
 	
@@ -121,7 +134,6 @@ public class MakeRedstone {
 		//Snags Pattern and First Block Position from the main file
 		try {
 			
-
 			if (lineList.get(0).startsWith("POS")) {
 				
 				parsedLine = MkRsConsole.PConsoleParse(lineList.get(0));
@@ -163,9 +175,11 @@ public class MakeRedstone {
 		
 		System.out.println("Doing file \"" + file.getName() + "\"");
 		
-		//Start on 2nd line here b/c the above already made the first line into a command
-		Main.dbOutput(file.getName() + " amt. of lines:  " + list.size() );
-		for (int i = 1; i < list.size(); i++) {
+		//We have a force repeat thing moved to the colon command NEW SET, knowing that formerly the first line was just by default smooshed into a repeat block
+		
+		Main.dbOutput(file.getName() + " amt. of lines: " + list.size() );
+//		changed i=1 to i=0
+		for (int i = 0; i < list.size() && !stop; i++) {
 			conditional = false;
 			Main.dbOutput("COMMAND: " + list.get(i));
 			interpretLine(list.get(i));
@@ -178,10 +192,12 @@ public class MakeRedstone {
 	private void interpretLine(String line) throws IOException {
 //(TODO)Right, so I think at this point we could interpret comments and line breaks here. Im not sure we need to go through several complicated file preparations.
 		isBlock = true;
-		System.out.println("Hey, we are interpreting the line now.");
+		
+		if (line.startsWith(":")) ColonCommand(line); 
+		if (line.startsWith("POS") || line.startsWith("PAT")) PosPatSet(line); 
 		
 //(TODO)We need to include a warning with CONDITIONAL, because it will not automatically depend on the previous block and players need to be aware of that when doing patterns!
-		if (line.startsWith("CONDITIONAL ")) {conditional = true; line = line.substring(12);}	//Errr, this needs to NOT return;, and instead remove the CONDITIONAL from the start of the line (TODO)
+		if (line.startsWith("CONDITIONAL ")) {conditional = true; line = line.substring(12);}
 		if (line.startsWith("INIT ")) {
 			isBlock = false; 
 			line = line.substring(5); 
@@ -189,9 +205,7 @@ public class MakeRedstone {
 //			rsReader may not be initialized
 			rsReader.write(Main.redstoneOutputFile, line);
 		}
-		System.out.println("The next if statement is where we are made or broken");
 		if (line.contains("-> ")) {
-			System.out.println("We are made!");
 //(TODO) InterpretLine is not called when the first block is placed in! (note that this is a legacy issue, not tested w/new system
 			Main.dbOutput("Reference point referenced! (MakeRedstone, interpretLine)");
 			String referencePoint = line.substring(line.lastIndexOf("->") + 3);
@@ -214,9 +228,11 @@ public class MakeRedstone {
 			
 			Block.currentBlock = 0; //Make this into, like, a setter. And not a direct, reach-into-class-to-chance sort of deal. (TODO)
 			//Note it's 0 and not -1 like when a new makeRedstone is called.
+			//This is going to be DIR dependent, the -1, so... better like, be on top of that.
 			new Block("setblock ~-1 ~ ~ minecraft:stained_glass 14", Block.IMPULSE, false, referencePointIndex);
 		}
-		if (line.startsWith("DELAY ")) {
+//		Note: DELAY should only really be mentioned when someone delays a reference point call.
+		if (line.startsWith("DELAY ") && referencePointAddTo) {
 			line = line.substring(6/*line.lastIndexOf(" ")*/);	
 			int delay = Main.pInt(line);
 //			System.out.println(delay);
@@ -228,9 +244,47 @@ public class MakeRedstone {
 		Main.dbOutput(line);
 		
 		//If we're not adding to a reference point and the line we encountered is a single block, then..
-		if (!referencePointAddTo && isBlock) new Block(line,Block.CHAIN, conditional);
+		if (!referencePointAddTo && isBlock) new Block(line,Block.CHAIN, conditional, true);	//the true at the end is there to access the non legacy Block thingummy
 		else if (isBlock) new Block(line,Block.CHAIN, conditional, referencePointIndex);
 		
+	}
+	
+	void ColonCommand(String line) throws IOException {
+		
+		line = line.substring(1);
+		switch (line) {
+		case "NEW SET": currentBlockSet = new BlockSet(); currentBlockSet.updateBlock();; Block.currentBlock = 0; referencePointAddTo = false; block.forceRepeat = true; break;
+		case "CLEAR": /*We need to garner info on the POS and PAT for this. In fact thinking about a new block-set class for storing this info.*/break;
+			default: Main.dbOutput("Bad line (improper colon command)");
+		}	
+		isBlock = false;
+		
+	}
+	
+	void PosPatSet(String line) {
+		
+		try {
+			parsedLine = MkRsConsole.PConsoleParse(line);
+			parsedLine.add("This will never be seen and exists only for the sublist, of which the last parameter index is excluded");
+			System.out.println("Hello! From dat otha side!");
+			System.out.println(parsedLine.get(0));
+			System.out.println(parsedLine.get(1));
+			System.out.println(parsedLine.get(2));
+			System.out.println(parsedLine.get(3));
+
+			
+			switch (parsedLine.get(0)) {
+			case "POS": currentBlockSet.definePos(parsedLine.subList(1, 4)); break;
+			case "PAT": currentBlockSet.definePat(parsedLine.subList(1, 4)); /*stop = true;*/ break;
+			}
+			currentBlockSet.updateBlock();
+		}
+		catch (IndexOutOfBoundsException e) {
+			Main.output("Please use proper syntax when defining POS and PAT");
+			e.printStackTrace();
+		}
+		
+		isBlock = false;
 	}
 }
 

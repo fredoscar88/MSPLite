@@ -21,7 +21,7 @@ public class Main {
 
 	//How much of this shit is unused. I mean seriously.
 	
-	static final String VERSION = "Alpha V1.0.3";
+	static final String VERSION = "Alpha V1.1.0";
 	
 	static String ConsoleInput/* = "start"*/; 	//temporarily defaults to start //(not right now)
 	static String ConsoleCmd;	//
@@ -120,7 +120,7 @@ public class Main {
 			case "help": help(cmd); break;
 			case "stop":
 			case "exit": running=false; Server.stopServer(); break; //Exits console, stops all servers (by sending stop commands to their own ConsoleAction menus, we'll create a function for this). Uh yeah. Also waits for user input to close.
-			case "MakeRedstone": MakeRedstone(redstoneTxtDir); break;
+			case "MakeRedstone": MakeRedstone(); break;
 			case "MakeSpawnChunks": makeSpawnChunks(pInt(cmd.get(1)),pInt(cmd.get(2)),pInt(cmd.get(3)),pInt(cmd.get(4))); break;
 			case "ping": Server.sendCommand("say Pong!"); break;
 			case "debug": debug = !debug; System.out.println(debug); break;
@@ -164,15 +164,7 @@ public class Main {
 		
 		/*logs = new File("logs");
 		logs.mkdirs();*/
-		
-		redstoneTxtDir = new File("Redstone");
-		redstoneTxtDir.mkdirs();
-		
-		redstoneOutputFile = new File("Redstone" + File.separator + "output.txt");
-		redstoneOutputFile.createNewFile();
-		
-		redstoneMainFile = new File("Redstone" + File.separator + "main.txt");
-		redstoneMainFile.createNewFile();
+	
 		
 		//When a player joins for the first time, we can probably add them as rank 0 to the file using file updater.
 		//We'd use OIUpdater of course, no need to create conflict. I have to add a method to add a setting.
@@ -184,6 +176,7 @@ public class Main {
 			MainThreadFileUpdater.write(mspProps, "#Pattern=2 64 16"
 					+ "\n#First_Block=-48 64 -48"
 					+ "\n#Direction=EAST"
+					+ "\nRedstoneDir=Redstone"
 					+ "\n#^ As of now these are not checked. I'm only laying the ground work for the future,"
 					+ "\n#I just wanted to get this update out quick-like to get on github -fredo"
 //					+ "\nsilent-mode=false"
@@ -264,6 +257,7 @@ public class Main {
 	
 	//Automatically starts the server, put into a method because why not. Bear in mind since this is MSPLite there is
 	//only one server to start.
+//	Legacy
 	static void AutoStart(String jarname) throws IOException, InterruptedException {
 		
 //		new Server(jarname);
@@ -415,8 +409,20 @@ public class Main {
 		return ((size-1)/2);
 	}
 	
-	static void MakeRedstone(File dir) throws IOException {
+	static void MakeRedstone() throws IOException {
 		
+//		redstoneTxtDir = new File("Redstone");
+//		redstoneTxtDir.mkdirs();
+		
+		File dir = new File(MainThreadFileUpdater.getSetting(mspProps, "RedstoneDir"));
+		Main.dbOutput(dir.getAbsolutePath());
+		dir.mkdirs();
+		
+		redstoneOutputFile = new File(dir.getName() + File.separator + "output.txt");
+		redstoneOutputFile.createNewFile();
+		
+		redstoneMainFile = new File(dir.getName() + File.separator + "main.txt");
+		redstoneMainFile.createNewFile();
 		
 		
 		try {
@@ -426,7 +432,7 @@ public class Main {
 			HashSet<String> excludedFiles = new HashSet<String>();
 			excludedFiles.add("documentation.txt");
 			excludedFiles.add("NOTES.txt");
-			excludedFiles.add("main.txt");
+//			excludedFiles.add("main.txt");
 			excludedFiles.add("replaces.txt");
 			excludedFiles.add("output.txt");
 			
@@ -435,7 +441,9 @@ public class Main {
 			Server.sendCommand("Making redstone...");
 			
 			MainThreadFileUpdater.clearFile(redstoneOutputFile);
-			new MakeRedstone(dir, excludedFiles);
+			//note to self: include turning off the sendCommandFeedback here, and turn it on at the end of the file so it isn't so spammy
+//			new MakeRedstone(dir, excludedFiles);
+			new MakeRedstone(dir, excludedFiles, true);
 			MainThreadFileUpdater.writeNoLineBreak(redstoneOutputFile, "say Done!");
 			
 			Server.sendCommand(MainThreadFileUpdater.read(redstoneOutputFile));

@@ -43,19 +43,44 @@ public class Block {
 	int funcYInt;
 	int funcZInt;
 	
+	static boolean forceRepeat;
+	
 	static int setRP = -1;	//Reference point set. Default point is at same X, Z coords but lower Y as the main block.
 	
 	boolean auto;
 	
-	//New set, default parameters (implicit)
-	public Block(String cbCommand, boolean firstBlockCalled) {	//firstBlockCalled is to distinguish this from the legacy code below, the one that we normally use just for the main.txt
-		// set++; <--- should aonly be called if the player doesn't explicitly state any parameters. set is used to determine where the first block should go of a new set when default parameters are used.
+//new one : )
+	public Block(String cbCommand, int type, boolean conditional, boolean imheretodelineate) throws IOException {
+		auto = true;
+//		conditional = false; Like WHYYYYYYYY
+		if (forceRepeat) {
+			type = REPEAT;
+			forceRepeat = false;
+		}
 		
-	}
-	
-	//New set, altered parameters (explicit)
-	public Block(int[] startCoords, int[] pattern, String cbCommand, boolean firstBlockCalled) {
+		switch (type) {
+		case IMPULSE:	typeOfCB = " command_block "; break;
+		case CHAIN:		typeOfCB = " chain_command_block "; auto = true; break;
+		case REPEAT:	typeOfCB = " repeating_command_block "; currentBlock = 0; auto = false; break;	//Set increments on REPEAT b/c the only instance we add a repeating block is when we have a new file. Current Block is also reset since it pertains to each individual file.
+		default: 																				//if we had kept the idea that the files don't add new repeat CBs then it would have just built off the previous one, and then current block would not have been reset and set wouldn't exist
+		}
 		
+		//Below, func<value> returns the relative position of that coord to the first block. To get it's absolute pos
+		//we add it to that first block. We also assign the value to a variable when we call funcX funcY or funcZ. This is used in determining direction.
+		x = firstX + (funcXInt = funcX(currentBlock, pattern));	//remember, we have to add the relative values (which is what func<value> gives) to the absolutes given by main. 
+		y = firstY + (funcYInt = funcY(currentBlock, pattern));							//b/c X is our decided metric for expansion, we start new lines one patX length away from the previous which is what set*patX gives us
+		z = firstZ + (funcZInt = funcZ(currentBlock, pattern));
+		direction = direction(funcXInt, funcYInt, funcZInt);	//The three parameters represent relative positions to the first block.
+		
+		//Main.dbOutput("this should equal the below: " + commandMake(x,y,z,typeOfCB,direction,auto,conditional,cbCommand));
+		//command = "setblock " + x + " " + y + " " + z + typeOfCB + direction + " replace {TrackOutput:0b,auto:1b,Command:" + cbCommand + "}";
+		command = commandMake(x,y,z,typeOfCB,direction,auto,conditional,cbCommand);
+		Main.dbOutput("COMMAND FROM BLOCK: " + command);
+		
+		//command = commandMake(x,y,z,typeOfCB,direction,auto,conditional,cbCommand);
+		if (type==REPEAT) {command = command.replaceFirst(",auto:1b", ""); enterCommand("setblock " + x + " " + (y-1) + " " + z + " minecraft:redstone_block");}
+		enterCommand(command);
+		currentBlock++;
 	}
 	
 	
@@ -66,6 +91,8 @@ public class Block {
 	//This is going to be legacy code, too :< (TODO)
 	public Block(String cbCommand, int type, boolean conditional, int referencePointIndex) throws IOException {	//For adding blocks to a reference point chain
 		
+		//We need POS and PAT treatment for these. reference points should be treated as new sets!!!! (TODO)
+		
 		switch (type) {
 		case IMPULSE:	typeOfCB = " command_block "; break;
 		case CHAIN:		typeOfCB = " chain_command_block "; auto = true; break;
@@ -74,7 +101,7 @@ public class Block {
 		currentBlock++;	//Yes, we could have put this in x such that x = getRP + currentBlock++ but I opted not to since we might need currentBlock for other raisins.
 		
 		x = getRPCoords(referencePointIndex)[0] + currentBlock;
-		y = 8;
+		y = 8;	
 		z = getRPCoords(referencePointIndex)[2];
 		direction = EAST; //Again this is temp. for now we assume EAST but I imagine we can inherit this from some .props files. (TODO)
 		
@@ -139,9 +166,9 @@ public class Block {
 //	--------------------------------------------------------------------------------------------------------
 	
 	
-	public void setDefaultParams(int[] defCoords, int[] defPattern) {
+	static public void setDefaultParams(int[] defCoords, int[] defPattern) {
 		firstX = defCoords[0]; firstY = defCoords[1]; firstZ = defCoords[2];
-		setFinalPattern(pattern);
+		setFinalPattern(defPattern);
 	}
 	public void reset() {
 		set = -1;
@@ -219,7 +246,8 @@ public class Block {
 		//creates an incremental pattern that starts decreasing after about half.
 		//EX: if the pattern is restricted to 4 blocks, the X values go 0,1,2,3,3,2,1,0 repeat. Whenever it switches counting
 		//directions is when Z increments (or decreases)
-	
+		Main.dbOutput(Integer.toString(pattern[X_PAT]));
+		
 		if (pattern[X_PAT] != 1) {
 			Q = (Q % (2*pattern[X_PAT]));	//lol probably unnecessary. just leave Q alone here I tHINK. verify maybe.
 		}	else	{
