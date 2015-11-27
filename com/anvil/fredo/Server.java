@@ -53,7 +53,7 @@ public class Server {
 		
 //		p.isAlive(); <<<---- For testing whether the server is alive!
 		
-		OT = new OutputThread(p, "Output Thread");
+		OT = new OutputThread(p, "Output Thread", Main.MSPPE);	//really should use getters/setters.... (TODO)
 		OT.start();
 		
 //		EOT = new ServerErrorStreams(p, "Error Output Thread");

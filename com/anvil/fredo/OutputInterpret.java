@@ -39,11 +39,12 @@ public class OutputInterpret {
 		
 		if (message != null && (message.get(2) == "PLAYER")) {
 			player = message.get(0);
+			Main.dbOutput(player + " <-- OI, Interpret");
 			msgString = message.get(1);
 			
 			System.out.println("\"" + player + "\" entered " + "\"" + msgString + "\"");
 			message = OIC.PConsoleParse(msgString);
-			
+			Main.dbOutput("OI Interpret " + msgString);
 			PlayerAction(player, message);
 			
 		}
@@ -57,20 +58,74 @@ public class OutputInterpret {
 		
 		//What would be better than a single file that stores each player and their rank, give each player a file
 		//and store all relevant data there. So there is a directory for player files, and then a fredo file for fredo, etc.
+		
+		rank = 0; //resets rank, so there's no carry over
+		
+		Main.dbOutput("OI PlayerAction " + cmd.get(0));
 		try {
 			
 			rank = Integer.parseInt(returnPlayerSetting(player, "rank"));
-			System.out.println("(OutputInterpret, PlayerAction) Rank of " + player + ": " + rank + " role: " + returnPlayerSetting(player, "role"));
+			Main.dbOutput("(OutputInterpret, PlayerAction) Rank of " + player + ": " + rank /*+ " role: " + returnPlayerSetting(player, "role")*/);
 		} catch (Exception e) {
-			//System.out.println(player + " has no registered rank or not a registered player (or some other error occurred");
+			System.out.println(player + " has no registered rank, is not a registered player, or some other error occurred");
 			//temp = false;
 		}
 		
-		switch (cmd.get(0)) {
-		case "!OpMe": if (rank >= 800) Server.sendCommand("op " + player); break;
-		case "!MkRdStone": if (rank >= 1000) {Main.MakeRedstone();} break;
-		case "!RplRdStone": if (rank >= 1000) {Main.replaceRedstone();} break;
-		case "!Exit": if (rank >= 1000) {Main.running = false; /*make that a setter >:V*/ Server.stopServer();} break;
+		Main.dbOutput("OI PlayerAction 2 " + cmd.get(0));
+		commandRun(cmd, player, rank);
+		/*switch (cmd.get(0)) {
+		case "!OpMe": if (rank >= 1000) Server.sendCommand("op " + player); break;
+		case "!MkRdStone": if (rank >= 800) {Main.MakeRedstone();} break;
+		case "!RplRdStone": if (rank >= 800) {Main.replaceRedstone();} break;
+		case "!Exit": if (rank >= 1000) {Main.running = false; /*make that a setter >:V*/ /*Server.stopServer();} break;
+		}*/
+	}
+	private void commandRun(List<String> cmd, String player, int rank) throws IOException {
+		
+		Main.dbOutput("OI commandRun: " + cmd.get(0));
+		
+		File MSPPData = Main.MSPPData;
+		
+		String enabledSetting = OIFileReader.getSetting(MSPPData, (cmd.get(0) + "-Enabled"));	//Whether this command is enabled
+		try {Main.dbOutput("OI, commandRun 2: " + cmd.get(0));} catch (NullPointerException e) {}
+		boolean enabled;
+		
+		try {
+			enabled = Main.boolInterpretFromStr(enabledSetting);
+			if (!enabled) {
+				Server.sendCommand("tell " + player + " That command is not enabled.".replaceAll(" ", " \u00A7r\u00A7c"));
+				return;
+			}
+		}
+		catch (NullPointerException e) {
+			Main.dbOutput("Not a command!");
+			return;
+		}
+		
+		int cmdRank = Main.pInt(OIFileReader.getSetting(MSPPData, (cmd.get(0) + "-Rank")));		//Required minimum rank to run
+		String cmdToRun = OIFileReader.getSetting(MSPPData, (cmd.get(0) + "-Cmd"));
+		
+		Main.dbOutput("OI commandRun 3: " + cmdToRun);
+		
+		cmdToRun = cmdToRun.replaceAll("player", player);										//Command to run
+		try {cmdToRun = cmdToRun.replaceAll("param2", cmd.get(1));} catch (IndexOutOfBoundsException e) {/*There is no second word to this command!*/}
+		if (cmdToRun.startsWith("SCRIPT")) {
+			try {new Script(cmd.get(1)).run();} catch (IndexOutOfBoundsException e) {/*There is no second word to this command!*/}
+			enabled = false; //this is to skip the below rows
+		}
+		
+		//if enabled is false, then we won't get here anyway: we should be stopped by the try/catch above
+		if (enabled && (rank >= cmdRank)) {
+			switch(cmdToRun) {
+			case "MAKEREDSTONE": Main.MakeRedstone(); break;
+			case "REPLACEREDSTONE": Main.replaceRedstone(); break;
+			case "EXIT": Main.running = false; Server.stopServer(); break;
+				default: Server.sendCommand(cmdToRun);
+			}
+		}
+		else if (rank < cmdRank) {
+			Server.sendCommand("tell " + player + " You are not allowed to use this command".replaceAll(" ", " \u00A7r\u00A7c"));
+
 		}
 	}
 	
@@ -96,6 +151,7 @@ public class OutputInterpret {
 		
 		switch (tempFirstChar) {
 		
+		case '*': temp = InputPlayerMe(input); break;
 		case '<': temp = InputPlayer(input); break;
 		case '[': temp = InputOP(input); break;// this is /say input, from the server or an operator. So basically OP only stuff.
 		default: temp = null;
@@ -105,6 +161,22 @@ public class OutputInterpret {
 		return temp;
 	}
 	
+	static private List<String> InputPlayerMe(String input) {
+		List<String> temp = new ArrayList<String>();
+		
+		for (int i = 3; i < input.length(); i++) {
+			if (input.charAt(i) == ' ') {
+				
+				temp.add(InputRemoveTeam(input.substring(2,i)));	//player's name
+				temp.add(input.substring(i + 1));					//Player's message
+				temp.add("PLAYER");									//Type of entity that entered command
+				
+				return temp;
+			}
+		}
+		
+		return null;
+	}
 	static private List<String> InputPlayer(String input) {
 		List<String> temp = new ArrayList<String>();
 		
@@ -114,7 +186,7 @@ public class OutputInterpret {
 				temp.add(InputRemoveTeam(input.substring(1,i))); //Gets which player entered input (temp.get(0))
 				
 				temp.add(input.substring(i+2));	//Gets what the player input (temp.get(1))
-				//System.out.println();	//Prints a line for legibility's sake
+
 				temp.add("PLAYER");	//Gets who entered the input (temp.get(2))
 				
 				return temp;
@@ -127,7 +199,7 @@ public class OutputInterpret {
 	static private List<String> InputOP(String input) {
 		List<String> temp = new ArrayList<String>();
 		
-		for (int i = 3; i < input.length(); i++) {
+		for (int i = 1; i < input.length(); i++) {
 			if (input.charAt(i)== ']') {
 				temp.add(input.substring(1,i)); //Gets which operator entered input (temp.get(0))
 				
@@ -145,14 +217,32 @@ public class OutputInterpret {
 	
 	static private String InputRemoveTeam(String playerName) {
 		
-		Main.dbOutput("Hello");
+		
 		if (playerName.contains("\u00A7")) {	// \u00A7 is the section symbol
 			Main.dbOutput("yolo");
-			for (int i = 5; i < playerName.length(); i++) { 
-				if (playerName.charAt(i) == '\u00A7') {
-					return playerName.substring(i+2);
+			//neuveau
+			Main.dbOutput("OI, InputRemoveTeam: " + playerName);
+			
+			
+			//neuveau
+			if (playerName.contains("[")) {
+				for (int i = 5; i < playerName.length(); i++) { 
+					if (playerName.charAt(i) == '\u00A7') {
+						return playerName.substring(i+2);
+					}
 				}
 			}
+			else {
+				Main.dbOutput("----------------------"
+						+ "\n" + playerName);
+				playerName = playerName.substring((playerName.indexOf("\u00A7") + 2), playerName.length());
+				Main.dbOutput(playerName);
+				playerName = playerName.substring(0, playerName.lastIndexOf("\u00A7"));
+				Main.dbOutput(playerName
+						+ "\n----------------------");
+				//I should just be able to do a replace("\uAA07 + ."), . being the meta character class referring to any character.
+			}
+			
 			return playerName;
 		}	
 		else {

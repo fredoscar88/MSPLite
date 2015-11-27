@@ -28,7 +28,7 @@ public class Main {
 	static Scanner ConsoleReader;	//Scanner to acquire input
 	static boolean running;	//If the main thread is running. If false should close all other threads.
 	static List<String> cmd;
-	static boolean debug = false;
+	static boolean debug = false;	//temp true (TODO)
 	
 	//static File dirServers;	//Servers directory
 	//static File dirRes;	//Resources directory
@@ -38,10 +38,13 @@ public class Main {
 	static File redstoneTxtDir;
 	static File playerRank;
 	static File players;
+	static File MSPPData;
 	static File testPacket;
 	static File redstoneOutputFile;
 	static File redstoneMainFile;
 	static File mspProps;
+	
+	static File redstoneDir;
 	
 	//static BufferedWriter fileWriter;	//May not be needed
 	static String fileReadoutValue;
@@ -53,6 +56,8 @@ public class Main {
 	static Server server;
 	
 	static String worldName;
+	
+	static boolean MSPPE;	//Player output interpretation true/false, default false
 	
 	
 	//I eventually want the main class to open a new console so I don't have to run the program from
@@ -68,6 +73,8 @@ public class Main {
 		//Rename class to FileAccess?
 		MainThreadFileUpdater = new FileUpdater();
 		addDirectories();
+		Script.setScriptStorage(MainThreadFileUpdater.getSetting(mspProps, "ScriptDir"));
+		
 		//NOTE If no args are specified in running the server (i.e you double click MSP.jar) it will cut off when
 		//it tries to find args[0]. No server will start, and the program crashes. This is intentional
 		//behavior as right now a console should be used to start the program as it is useless without a GUI.
@@ -103,9 +110,14 @@ public class Main {
 		System.out.println("Type \"?\" or \"help\" for help.");
 		while (running) {
 			//I might want to put the try catch here, but am not doing so RN so I can find the problem easier.
-			cmd.clear();
-			cmd = console.ConsoleRun();
-			ConsoleAction(cmd);
+			try {
+				cmd.clear();
+				cmd = console.ConsoleRun();
+				ConsoleAction(cmd);
+			}
+			catch (Exception e) {
+				
+			}
 			
 			
 		}
@@ -125,6 +137,7 @@ public class Main {
 			case "ping": Server.sendCommand("say Pong!"); break;
 			case "debug": debug = !debug; System.out.println(debug); break;
 			case "ReplaceRedstone": replaceRedstone(); break;
+			case "script": new Script(cmd.get(1)).run(); break;
 //			case "getrank": output(OutputInterpret.returnPlayerSetting(cmd.get(1), "rank")); break;
 //			case "getrole":	output(OutputInterpret.returnPlayerSetting(cmd.get(1), "role")); break;
 //			case "server":
@@ -146,6 +159,14 @@ public class Main {
 		return Integer.parseInt(sInt);
 	}
 	
+	static boolean boolInterpretFromStr(String str) {
+		
+		switch (str) {
+		case "true": return true;
+		case "false": return false;
+		default: return false;
+		}
+	}
 	
 	//-------------------------------------------------------------------------------------------------------
 	//(REMOVE)The whole start server is getting overhauled. Until I remove this comment, we're focusing on setting up a new server.
@@ -165,64 +186,70 @@ public class Main {
 		/*logs = new File("logs");
 		logs.mkdirs();*/
 	
-		
-		//When a player joins for the first time, we can probably add them as rank 0 to the file using file updater.
-		//We'd use OIUpdater of course, no need to create conflict. I have to add a method to add a setting.
-		players = new File("MSPPlayers");
-		players.mkdirs();
-		
 		mspProps = new File("MSP.properties");
 		if (mspProps.createNewFile()) {
-			MainThreadFileUpdater.write(mspProps, "#Pattern=2 64 16"
-					+ "\n#First_Block=-48 64 -48"
-					+ "\n#Direction=EAST"
+			MainThreadFileUpdater.write(mspProps, "Pattern=1 64 16"
+					+ "\nFirst_Block=-48 64 -48"
+					+ "\nDirection=EAST"
 					+ "\nRedstoneDir=Redstone"
-					+ "\n#^ As of now these are not checked. I'm only laying the ground work for the future,"
-					+ "\n#I just wanted to get this update out quick-like to get on github -fredo"
+					+ "\nScriptDir=Scripts"
+					+ "\n#^ As of now direction cannot be changed, the block placing"
+					+ "\n#mechanism only supports EAST right now, that will require another update to adapt"
 //					+ "\nsilent-mode=false"
-					+ "\nStartup_Arguments=java -Xms1024M -Xmx1024M -jar server.jar");
+					+ "\nStartup_Arguments=java -Xms1024M -Xmx1024M -jar server.jar"
+					+ "\nOIT=false");
 		}
+		
+		try {MSPPE = boolInterpretFromStr(MainThreadFileUpdater.getSetting(mspProps, "OIT"));} catch (NullPointerException e) {dbOutput("mspProps still needs to be generated");}
+
+		//When a player joins for the first time, we can probably add them as rank 0 to the file using file updater.
+		//We'd use OIUpdater of course, no need to create conflict. I have to add a method to add a setting.
+		if (MSPPE) {
+			players = new File("MSPPlayers");
+			players.mkdirs();
+			MSPPData = new File("MSPPlayers" + File.separator + "cc.txt");
+			if (MSPPData.createNewFile()) {
+				MainThreadFileUpdater.write(MSPPData, ""
+						+ "\n#MSPPlayers command configuration"
+						+ "\n#player gets replaced with the player that entered the command"
+						+ "\n#param2 gets replaced with the second word the player entered"
+						+ "\n#Commands in caps are MSPLite specific commands"
+						+ "\n"
+						+ "\n!OpMe-Enabled=true"
+						+ "\n!OpMe-Rank=1000"
+						+ "\n!OpMe-Cmd=op player"
+						+ "\n"
+						+ "\n!MkRdStone-Enabled=true"
+						+ "\n!MkRdStone-Rank=1000"
+						+ "\n!MkRdStone-Cmd=MAKEREDSTONE"
+						+ "\n"
+						+ "\n!RplRdStone-Enabled=true"
+						+ "\n!RplRdStone-Rank=1000"
+						+ "\n!RplRdStone-Cmd=REPLACEREDSTONE"
+						+ "\n"
+						+ "\n!Exit-Enabled=true"
+						+ "\n!Exit-Rank=1000"
+						+ "\n!Exit-Cmd=EXIT"
+						+ "\n"
+						+ "\n!Kick-Enabled=true"
+						+ "\n!Kick-Rank=800"
+						+ "\n!Kick-Cmd=kick param2"
+						+ "\n"
+						+ "!Script-Enabled=true"
+						+ "\n!Script-Rank=1000"
+						+ "\n!Script-Cmd=SCRIPT param2");
+			}
+		}
+		
+		
+		//(TODO) change the setting name strings to use variables so they're easier to change in the future, probably a string array
+
 		
 		
 		//new File("MSPPlayers" + File.separator + "fredo.txt").createNewFile();
 		
 		//playerRank = new File("MSPPlayers" + File.separator + "PlayerRank.txt");
 		//playerRank.createNewFile();
-		
-		/*File servProps = new File("server.properties");
-		if (servProps.createNewFile()) {
-			MainThreadFileUpdater.write(servProps,"generator-settings="
-					+ "\nop-permission-level=4"
-					+ "\nresource-pack-hash="
-					+ "\nlevel-name=" + worldName
-					+ "\nallow-flight=false"
-					+ "\nannounce-player-achievements=true"
-					+ "\nserver-port=25565"
-					+ "\nmax-world-size=29999984"
-					+ "\nlevel-type=DEFAULT"
-					+ "\nlevel-seed="
-					+ "\nforce-gamemode=false"
-					+ "\nserver-ip="
-					+ "\nnetwork-compression-threshold=256"
-					+ "\nmax-build-height=256"
-					+ "\nspawn-npcs=true"
-					+ "\nwhite-list=false"
-					+ "\nspawn-animals=true"
-					+ "\nhardcore=false"
-					+ "\nsnooper-enabled=true"
-					+ "\nonline-mode=true"
-					+ "\nresource-pack="
-					+ "\npvp=true"
-					+ "\ndifficulty=1"
-					+ "\nenable-command-block=true"
-					+ "\ngamemode=0"
-					+ "\nplayer-idle-timeout=0"
-					+ "\nmax-players=20"
-					+ "\nspawn-monsters=true"
-					+ "\ngenerate-structures=true"
-					+ "\nview-distance=10"
-					+ "\nmotd=An MSP Minecraft Server");
-		}*/
 		
 	}
 
@@ -414,74 +441,60 @@ public class Main {
 //		redstoneTxtDir = new File("Redstone");
 //		redstoneTxtDir.mkdirs();
 		
-		File dir = new File(MainThreadFileUpdater.getSetting(mspProps, "RedstoneDir"));
-		Main.dbOutput(dir.getAbsolutePath());
-		dir.mkdirs();
-		
-		redstoneOutputFile = new File(dir.getName() + File.separator + "output.txt");
-		redstoneOutputFile.createNewFile();
-		
-		redstoneMainFile = new File(dir.getName() + File.separator + "main.txt");
-		redstoneMainFile.createNewFile();
-		
-		
-		try {
-			//Calls the constructor of MakeRedstone into action for every file, starting with main.
+		redstoneDir = new File(MainThreadFileUpdater.getSetting(mspProps, "RedstoneDir"));
+		Main.dbOutput(redstoneDir.getAbsolutePath());
+		if (redstoneDir.mkdirs()) {
+			output("Successfully generated the redstone directory!");
+			output("You can create a new textfile and begin writing in commands!");
+			output("When you are happy with your commands, type \"MakeRedstone\" into "
+					+ "\n this command prompt to generate the command blocks.");
+
+		}
+		else {
 			
-			//List of files that won't be included. I might make this a bit more malleable, i.e read from a file.
-			HashSet<String> excludedFiles = new HashSet<String>();
-			excludedFiles.add("documentation.txt");
-			excludedFiles.add("NOTES.txt");
-//			excludedFiles.add("main.txt");
-			excludedFiles.add("replaces.txt");
-			excludedFiles.add("output.txt");
+			redstoneOutputFile = new File(redstoneDir.getName() + File.separator + "output.txt");
+			redstoneOutputFile.createNewFile();
 			
-//			----------------------
-//			----------------------
-			Server.sendCommand("Making redstone...");
-			
-			MainThreadFileUpdater.clearFile(redstoneOutputFile);
-			//note to self: include turning off the sendCommandFeedback here, and turn it on at the end of the file so it isn't so spammy
-//			new MakeRedstone(dir, excludedFiles);
-			new MakeRedstone(dir, excludedFiles, true);
-			MainThreadFileUpdater.writeNoLineBreak(redstoneOutputFile, "say Done!");
-			
-			Server.sendCommand(MainThreadFileUpdater.read(redstoneOutputFile));
-//			----------------------
-//			----------------------
-//			and here, here we would read from the output file
-			
-			
-			
-			/*File mainFile = new File (dir.getAbsolutePath() + File.separator + "main.txt");
-			new MakeRedstone(mainFile);
-			
-			for (File file : dir.listFiles()) {
+			try {
+				//Calls the constructor of MakeRedstone into action for every file, starting with main.
 				
-				//would have used hashset but cba.
-				if (file.isFile() && excludedFiles.add(file.getName())) {
-					new MakeRedstone(file);	//this is the MAKEREDSTONE CLASS constructor
-					
-				}
+				//List of files that won't be included. I might make this a bit more malleable, i.e read from a file.
+				HashSet<String> excludedFiles = new HashSet<String>();
+				excludedFiles.add("documentation.txt");
+				excludedFiles.add("NOTES.txt");
+//				excludedFiles.add("replaces.txt");
+				excludedFiles.add("output.txt");
+
+				Server.sendCommand("Making redstone...");
+				
+				MainThreadFileUpdater.clearFile(redstoneOutputFile);
+				//note to self: include turning off the sendCommandFeedback here, and turn it on at the end of the file so it isn't so spammy
+//				new MakeRedstone(dir, excludedFiles);
+				new MakeRedstone(redstoneDir, excludedFiles, true);
+				MainThreadFileUpdater.writeNoLineBreak(redstoneOutputFile, "say Done!");
+				
+				Server.sendCommand(MainThreadFileUpdater.read(redstoneOutputFile));
+
+
 			}
-			//move onto directories
-			for (File file : dir.listFiles()) {
-				
-				if (file.isDirectory()) {
-					MakeRedstone(file);	//this is the MAIN CLASS method
-					
-				}
-			}*/
-		}
-		catch (Exception e) {
-			e.printStackTrace();
-			System.out.println("Error in creating redstone! Please check the redstone files for problems!");
-		}
+			catch (Exception e) {
+				e.printStackTrace();
+				System.out.println("Error in creating redstone! Please check the redstone files for problems!");
+			}
 		
+		}
 		
 	}
 	static void replaceRedstone() throws IOException {
-		Server.sendCommand(MainThreadFileUpdater.read(redstoneOutputFile));
+		try {
+			redstoneOutputFile = new File(redstoneDir.getName() + File.separator + "output.txt");
+			redstoneOutputFile.createNewFile();
+			Server.sendCommand(MainThreadFileUpdater.read(redstoneOutputFile));
+		}
+		catch (Exception e) {
+			
+			output("You need to run MakeRedstone first!");
+		}
 	}
 
 	

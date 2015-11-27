@@ -96,6 +96,7 @@ public class FileUpdater {
 		 * we can call getSetting with the parameters (theFile, "PotatoesFarmed")
 		 * and it will return 164 (whatever is after the = sign)
 		 */
+		Main.dbOutput("FU, getSetting: " + setting);
 		
 		reader = new BufferedReader(new FileReader(file));
 		

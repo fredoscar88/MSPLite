@@ -75,6 +75,7 @@ public class MakeRedstone {
 	
 	public MakeRedstone(File rsDir, HashSet<String> excludedFiles, boolean A101) throws IOException {	//The boolean literally exists just to distinguish this from the above constructor which Im not removing yet since I still need this to be functional
 		MkRsConsole = new Console("MakeRedstone function- Updated last: Alpha 1.0.1");
+		ReferencePoint.resetReferencePoint();
 		fileListLoop(rsDir, excludedFiles, A101);
 		
 	}
@@ -253,6 +254,7 @@ public class MakeRedstone {
 		
 		line = line.substring(1);
 		switch (line) {
+		case "NEW-SET":
 		case "NEW SET": currentBlockSet = new BlockSet(); currentBlockSet.updateBlock();; Block.currentBlock = 0; referencePointAddTo = false; block.forceRepeat = true; break;
 		case "CLEAR": /*We need to garner info on the POS and PAT for this. In fact thinking about a new block-set class for storing this info.*/break;
 			default: Main.dbOutput("Bad line (improper colon command)");
@@ -266,11 +268,11 @@ public class MakeRedstone {
 		try {
 			parsedLine = MkRsConsole.PConsoleParse(line);
 			parsedLine.add("This will never be seen and exists only for the sublist, of which the last parameter index is excluded");
-			System.out.println("Hello! From dat otha side!");
+			/*System.out.println("Hello! From dat otha side!");
 			System.out.println(parsedLine.get(0));
 			System.out.println(parsedLine.get(1));
 			System.out.println(parsedLine.get(2));
-			System.out.println(parsedLine.get(3));
+			System.out.println(parsedLine.get(3));*/
 
 			
 			switch (parsedLine.get(0)) {

@@ -16,10 +16,13 @@ public class OutputThread extends Thread implements Runnable {
 	BufferedWriter bw;
 	OutputInterpret oi;
 	
+	boolean MSPPlayersEnabled;
 	
 	boolean running;
 	
-	public OutputThread(Process p, String name) {
+	public OutputThread(Process p, String name, boolean MSPPE) {
+		
+		MSPPlayersEnabled = MSPPE;
 		
 		br = new BufferedReader(new InputStreamReader(p.getInputStream()));
 		
@@ -45,10 +48,11 @@ public class OutputThread extends Thread implements Runnable {
 				//That is exactly what was happening. I've got it working how I want it now.
 				output = br.readLine();
 				try {
-					oi.Interpret(output);
+					if (MSPPlayersEnabled) oi.Interpret(output);
 				}
 				catch (Exception e){
-					e.printStackTrace();
+					Main.dbOutput("OutPutthread, run: an exception was found. This probably resulted from InputOP in OI");
+//					e.printStackTrace();
 				}
 				
 				//OutputInterpret here!

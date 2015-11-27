@@ -47,17 +47,11 @@ public class RedstoneFile {
 //			(TODO) I might need trycatch here..
 //			the i-- is because when we remove the thing from the directory it shifts all other indices to the left so 
 //			the -- is accounting for that, and ofc tempcondition (being the size of the List) also accounts
-			if (lines.get(i).startsWith("#")) {
+			if (lines.get(i).startsWith("#") || lines.get(i).startsWith("//")) {
 				lines.remove(i);
 				i--;
 				tempCondition--;
 			}
-		/*	if (lines.get(i).startsWith("//")) { <<<<<<<<<<<<<<<Maybe else if????
-				lines.remove(i);
-				i--;
-				tempCondition--;
-			}
-			Hey yah that ^ is well, weird. It seems to break it. Notably only when a file ends with a line break and a line starting with #*/
 			
 		}
 		
