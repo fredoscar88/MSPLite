@@ -42,7 +42,7 @@ public class OutputInterpret {
 			Main.dbOutput(player + " <-- OI, Interpret");
 			msgString = message.get(1);
 			
-			System.out.println("\"" + player + "\" entered " + "\"" + msgString + "\"");
+			Main.dbOutput("\"" + player + "\" entered " + "\"" + msgString + "\"");
 			message = OIC.PConsoleParse(msgString);
 			Main.dbOutput("OI Interpret " + msgString);
 			PlayerAction(player, message);
@@ -67,7 +67,7 @@ public class OutputInterpret {
 			rank = Integer.parseInt(returnPlayerSetting(player, "rank"));
 			Main.dbOutput("(OutputInterpret, PlayerAction) Rank of " + player + ": " + rank /*+ " role: " + returnPlayerSetting(player, "role")*/);
 		} catch (Exception e) {
-			System.out.println(player + " has no registered rank, is not a registered player, or some other error occurred");
+//			System.out.println(player + " has no registered rank, is not a registered player, or some other error occurred");
 			//temp = false;
 		}
 		

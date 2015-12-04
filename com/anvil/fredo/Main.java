@@ -21,7 +21,7 @@ public class Main {
 
 	//How much of this shit is unused. I mean seriously.
 	
-	static final String VERSION = "Alpha V1.1.0";
+	static final String VERSION = "Alpha V1.1.1";
 	
 	static String ConsoleInput/* = "start"*/; 	//temporarily defaults to start //(not right now)
 	static String ConsoleCmd;	//
@@ -29,6 +29,7 @@ public class Main {
 	static boolean running;	//If the main thread is running. If false should close all other threads.
 	static List<String> cmd;
 	static boolean debug = false;	//temp true (TODO)
+	static boolean allowServerInteraction = true;	//(TODO) this needs to be an option in the MSPProps
 	
 	//static File dirServers;	//Servers directory
 	//static File dirRes;	//Resources directory
@@ -135,6 +136,7 @@ public class Main {
 			case "MakeRedstone": MakeRedstone(); break;
 			case "MakeSpawnChunks": makeSpawnChunks(pInt(cmd.get(1)),pInt(cmd.get(2)),pInt(cmd.get(3)),pInt(cmd.get(4))); break;
 			case "ping": Server.sendCommand("say Pong!"); break;
+			case "send": Server.sendCommand(cmd.get(1));
 			case "debug": debug = !debug; System.out.println(debug); break;
 			case "ReplaceRedstone": replaceRedstone(); break;
 			case "script": new Script(cmd.get(1)).run(); break;
@@ -260,6 +262,10 @@ public class Main {
 	static void dbOutput(String message) {
 		
 		if (debug) System.out.println("DEBUG: " + message);
+	}
+	static void servOutput(String message) {
+		
+		if (debug) System.out.println("[SERVER] " + message);
 	}
 	
 	//maybe use this one with MakeSpawnChunks?

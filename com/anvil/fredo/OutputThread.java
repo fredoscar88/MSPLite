@@ -48,6 +48,7 @@ public class OutputThread extends Thread implements Runnable {
 				//That is exactly what was happening. I've got it working how I want it now.
 				output = br.readLine();
 				try {
+					Main.servOutput(output);
 					if (MSPPlayersEnabled) oi.Interpret(output);
 				}
 				catch (Exception e){
