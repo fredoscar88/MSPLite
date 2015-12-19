@@ -61,14 +61,20 @@ public class Server {
 		
 	}
 	
-	static void stopServer() throws IOException {
+	static void stopServer(boolean restart) throws IOException, InterruptedException {
 		
 //		EOT.terminate();
-		OT.terminate();
-		
+		Main.dbOutput("Waiting for console interaction to continue...");
+		Main.serverRestartFlag = restart;
+		Main.running = false;
 		if (p.isAlive()) {
 			sendCommand("stop");
 		}
+		
+		if (restart) Main.flagRestart();
+		//THIS MIGHT HAVE TO COME BEFORE THE ABOVE IF STATEMENT (TODO)
+		OT.terminate();
+
 		
 	}
 	

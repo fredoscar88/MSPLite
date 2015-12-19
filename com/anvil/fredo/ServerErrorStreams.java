@@ -45,7 +45,7 @@ public class ServerErrorStreams extends Thread implements Runnable {
 				//Main.dbOutput(Boolean.toString(Server.p.isAlive()));
 				if (!Server.p.isAlive()) {
 					//Please don't continue using this! This is a very hashed out copy!!!
-					Server.stopServer();
+					Server.stopServer(false);
 				}
 				
 				

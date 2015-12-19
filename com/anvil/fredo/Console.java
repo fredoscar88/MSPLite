@@ -97,7 +97,8 @@ public class Console {
 			e.printStackTrace();
 			System.out.println("My conjecture is the substring ran when it shouldn't have, in Console"
 					+ "\nHopefully this caught exception won't force the program into crashing");
-			cmd = null;
+			cmd = new ArrayList<String>();
+			cmd.add("help");
 		}
 		
 	}
@@ -143,6 +144,20 @@ public class Console {
 		
 		return null;
 	}
+
+	public String PConsoleStitch(List<String> cmd) {
+		StringBuilder sb = new StringBuilder();
+		
+		for (int i = 0 ;i < cmd.size(); i++) {
+			sb.append(" ");
+			sb.append(cmd.get(i));
+
+		}
+//		sb.deleteCharAt(sb.length());
+		
+		return sb.toString().trim();
+	}
+	
 }
 
 //All of the below is blah. Atm we're gunna change it to where any command can grab the syntax from the console. It's not the best solution (for ex. it doesn't really allow for multiple option flags, that would require constant parsing (i.e "--<optionname>" flags))

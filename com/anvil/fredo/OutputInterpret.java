@@ -28,7 +28,7 @@ public class OutputInterpret {
 		
 	}
 	
-	public void Interpret(String input) throws IOException {
+	public void Interpret(String input) throws IOException, InterruptedException {
 //		Main.dbOutput("OutputInterpret, Interpret: Interpret succesfully called.");
 		input = Reduce(input);
 		message = InputCheck(input);
@@ -49,10 +49,11 @@ public class OutputInterpret {
 			
 		}
 		
+		//We need to 'close' the file after we've used it, so we can modify it while MSP is running :S
 		
 	}
 	
-	public void PlayerAction(String player, List<String> cmd) throws IOException {
+	public void PlayerAction(String player, List<String> cmd) throws IOException, InterruptedException {
 		//Snags the players 'rank' or rather, in this case, checks to see if they are authorized.
 		//boolean temp = true;
 		
@@ -69,6 +70,7 @@ public class OutputInterpret {
 		} catch (Exception e) {
 //			System.out.println(player + " has no registered rank, is not a registered player, or some other error occurred");
 			//temp = false;
+			rank=0;
 		}
 		
 		Main.dbOutput("OI PlayerAction 2 " + cmd.get(0));
@@ -80,7 +82,7 @@ public class OutputInterpret {
 		case "!Exit": if (rank >= 1000) {Main.running = false; /*make that a setter >:V*/ /*Server.stopServer();} break;
 		}*/
 	}
-	private void commandRun(List<String> cmd, String player, int rank) throws IOException {
+	private void commandRun(List<String> cmd, String player, int rank) throws IOException, InterruptedException {
 		
 		Main.dbOutput("OI commandRun: " + cmd.get(0));
 		
@@ -102,25 +104,33 @@ public class OutputInterpret {
 			return;
 		}
 		
-		int cmdRank = Main.pInt(OIFileReader.getSetting(MSPPData, (cmd.get(0) + "-Rank")));		//Required minimum rank to run
+		String temp = OIFileReader.getSetting(MSPPData, (cmd.get(0)+ "-Rank"));
+		if (temp.equals("Any")) temp = "-1";
+		
+		int cmdRank = Main.pInt(temp);		//Required minimum rank to run
 		String cmdToRun = OIFileReader.getSetting(MSPPData, (cmd.get(0) + "-Cmd"));
 		
 		Main.dbOutput("OI commandRun 3: " + cmdToRun);
 		
 		cmdToRun = cmdToRun.replaceAll("player", player);										//Command to run
 		try {cmdToRun = cmdToRun.replaceAll("param2", cmd.get(1));} catch (IndexOutOfBoundsException e) {/*There is no second word to this command!*/}
-		if (cmdToRun.startsWith("SCRIPT")) {
-			try {new Script(cmd.get(1)).run();} catch (IndexOutOfBoundsException e) {/*There is no second word to this command!*/}
+		if ((rank >= cmdRank) && cmdToRun.startsWith("SCRIPT")) {
+//			This is interesting, we're totally ignoring the whole actually checking shit. ugh.
+//			try {new Script(cmd.get(1)).run();} catch (IndexOutOfBoundsException e) {/*There is no second word to this command!*/}
+			try {new Script(cmdToRun.substring(7)).run();} catch (IndexOutOfBoundsException e) {/*There is no second word to this command!*/}
+		
 			enabled = false; //this is to skip the below rows
 		}
+		//Why can't script go down there? we need to find out OH! Because it needs to check startsWith and Script isnt the whole command. (TODO)
 		
 		//if enabled is false, then we won't get here anyway: we should be stopped by the try/catch above
 		if (enabled && (rank >= cmdRank)) {
 			switch(cmdToRun) {
 			case "MAKEREDSTONE": Main.MakeRedstone(); break;
 			case "REPLACEREDSTONE": Main.replaceRedstone(); break;
-			case "EXIT": Main.running = false; Server.stopServer(); break;
-				default: Server.sendCommand(cmdToRun);
+			case "EXIT": Main.running = false; Server.stopServer(false); break;	//(TODO) Main.mainConsole.ConsoleRun("exit"); should work too
+			case "RESTART": Server.stopServer(true); break;
+			default: Server.sendCommand(cmdToRun);
 			}
 		}
 		else if (rank < cmdRank) {

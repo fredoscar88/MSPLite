@@ -19,9 +19,11 @@ import java.util.Scanner;
 //@SuppressWarnings("unused")
 public class Main {
 
+//	USE StringTokenizer CLASS! Ya dummy! (TODO)
+	
 	//How much of this shit is unused. I mean seriously.
 	
-	static final String VERSION = "Alpha V1.1.1";
+	static final String VERSION = "Alpha V1.1.3.1";
 	
 	static String ConsoleInput/* = "start"*/; 	//temporarily defaults to start //(not right now)
 	static String ConsoleCmd;	//
@@ -55,6 +57,8 @@ public class Main {
 	static Console mainConsole;
 	
 	static Server server;
+	static List<String> servArgs;
+	static boolean serverRestartFlag = false;
 	
 	static String worldName;
 	
@@ -106,22 +110,26 @@ public class Main {
 	
 	static void mainRunning(Console console) throws IOException, InterruptedException {
 		
-		running = true;
-		
-		System.out.println("Type \"?\" or \"help\" for help.");
-		while (running) {
-			//I might want to put the try catch here, but am not doing so RN so I can find the problem easier.
-			try {
-				cmd.clear();
-				cmd = console.ConsoleRun();
-				ConsoleAction(cmd);
-			}
-			catch (Exception e) {
+		do {
+			running = true;
+			
+			System.out.println("Type \"?\" or \"help\" for help.");
+			while (running) {
+				//I might want to put the try catch here, but am not doing so RN so I can find the problem easier.
+				try {
+					cmd.clear();
+					cmd = console.ConsoleRun();
+					ConsoleAction(cmd);
+				}
+				catch (Exception e) {
+					
+				}
 				
 			}
 			
+			if (serverRestartFlag) restart();
 			
-		}
+		} while (serverRestartFlag);
 		
 	}
 	
@@ -130,16 +138,18 @@ public class Main {
 		try {
 			switch (cmd.get(0)) {
 			case "?":
-			case "help": help(cmd); break;
+			case "help": help(cmd); 									break;
 			case "stop":
-			case "exit": running=false; Server.stopServer(); break; //Exits console, stops all servers (by sending stop commands to their own ConsoleAction menus, we'll create a function for this). Uh yeah. Also waits for user input to close.
-			case "MakeRedstone": MakeRedstone(); break;
+			case "exit": running=false; Server.stopServer(false);		break; //Exits console, stops all servers (by sending stop commands to their own ConsoleAction menus, we'll create a function for this). Uh yeah. Also waits for user input to close.
+			case "MakeRedstone": MakeRedstone();						break;
 			case "MakeSpawnChunks": makeSpawnChunks(pInt(cmd.get(1)),pInt(cmd.get(2)),pInt(cmd.get(3)),pInt(cmd.get(4))); break;
-			case "ping": Server.sendCommand("say Pong!"); break;
-			case "send": Server.sendCommand(cmd.get(1));
-			case "debug": debug = !debug; System.out.println(debug); break;
-			case "ReplaceRedstone": replaceRedstone(); break;
-			case "script": new Script(cmd.get(1)).run(); break;
+			case "ping": Server.sendCommand("say Pong!");				break;
+			case "send": cmd.remove(0); Server.sendCommand(mainConsole.PConsoleStitch(cmd));	break;
+			case "": output(mainConsole.PConsoleStitch(cmd));			break;
+			case "debug": debug = !debug; System.out.println(debug);	break;
+			case "ReplaceRedstone": replaceRedstone();					break;
+			case "script": new Script(cmd.get(1)).run();				break;
+			case "restart": restart();									break;
 //			case "getrank": output(OutputInterpret.returnPlayerSetting(cmd.get(1), "rank")); break;
 //			case "getrole":	output(OutputInterpret.returnPlayerSetting(cmd.get(1), "role")); break;
 //			case "server":
@@ -265,7 +275,7 @@ public class Main {
 	}
 	static void servOutput(String message) {
 		
-		if (debug) System.out.println("[SERVER] " + message);
+		System.out.println("[SERVER] " + message);
 	}
 	
 	//maybe use this one with MakeSpawnChunks?
@@ -316,8 +326,34 @@ public class Main {
 	static void AutoStart(List<String> servArgs) throws IOException, InterruptedException {
 		
 		new Server(servArgs);
+		Main.servArgs = servArgs;
 		Server.sendCommand("say MSPLite " + VERSION);
 	
+	}
+	static boolean restart() throws IOException, InterruptedException {
+		
+		if (!Server.p.isAlive()) {
+			new Server(servArgs);
+			return true;
+		}
+		else {
+			output("Server is already running, or hasn't fully completed shutdown. Please try again in a few moments.");
+			return false;
+		}
+		
+	}
+	
+	static void flagRestart() throws IOException, InterruptedException {
+		
+		int attempts = 4;
+		for (int i = 0; i < attempts; i++) {
+			int waiting = 0;
+			
+			while (waiting < 4999) {/*wait this amount of time*/}
+			
+			if (restart()) return;
+		}
+		
 	}
 	
 	//---------------------------------------------------------------------------------------------------------
@@ -345,7 +381,8 @@ public class Main {
 					+ "\nMakeRedstone"
 					+ "\nReplaceRedstone"
 					+ "\nping"
-					+ "\nexit");
+					+ "\nexit"
+					+ "\nsend");
 		}
 		
 	}
@@ -392,6 +429,10 @@ public class Main {
 			System.out.println("Usage: \"ping\""
 					+ "\nRequests a response from the server"
 					+ "\n(Debug tool to see what console window is tied to which server)");
+			break;
+		case "send":
+			System.out.println("Usage: \"send <command>\""
+					+ "\nSends <command> to the server");
 			break;
 			default: output("Not a command");
 		
@@ -503,5 +544,6 @@ public class Main {
 		}
 	}
 
+	
 	
 }

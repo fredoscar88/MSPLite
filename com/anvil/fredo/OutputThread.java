@@ -49,6 +49,9 @@ public class OutputThread extends Thread implements Runnable {
 				output = br.readLine();
 				try {
 					Main.servOutput(output);
+					Main.dbOutput(Boolean.toString(Server.p.isAlive()));
+					if (!Server.p.isAlive()) terminate();
+					
 					if (MSPPlayersEnabled) oi.Interpret(output);
 				}
 				catch (Exception e){
