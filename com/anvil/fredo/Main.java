@@ -20,10 +20,15 @@ import java.util.Scanner;
 public class Main {
 
 //	USE StringTokenizer CLASS! Ya dummy! (TODO)
+//	Comment better, you fool! {TODO}
+//	Make everything world-specific (redstone dir and CC, looking at you), yuh numbskull! [TODO]
 	
-	//How much of this shit is unused. I mean seriously.
-	
-	static final String VERSION = "Alpha V1.1.3.1";
+	//How much of this stuff is unused. I mean seriously.
+	//V1.1.3.1 - apparently, the changes to Custom Command keywords didnt work
+	//V1.1.3.2 should work...
+	//V1.1.3.3 UUID fetcher
+	//V1.1.3.3 Debug X debugging UUID
+	static final String VERSION = "Alpha V1.1.3.3 Debug 2";
 	
 	static String ConsoleInput/* = "start"*/; 	//temporarily defaults to start //(not right now)
 	static String ConsoleCmd;	//
@@ -100,7 +105,6 @@ public class Main {
 		mainRunning(mainConsole);
 		
 		output("MCServerPal closing");
-		//Here's where we stop the server
 		
 	}
 	
@@ -112,6 +116,7 @@ public class Main {
 		
 		do {
 			running = true;
+			serverRestartFlag = false;
 			
 			System.out.println("Type \"?\" or \"help\" for help.");
 			while (running) {
@@ -122,7 +127,7 @@ public class Main {
 					ConsoleAction(cmd);
 				}
 				catch (Exception e) {
-					
+					//Real helpful, this. Totally not just an attempt to keep the console running at all costs, nope not at all.
 				}
 				
 			}
@@ -300,7 +305,7 @@ public class Main {
 	
 	//Automatically starts the server, put into a method because why not. Bear in mind since this is MSPLite there is
 	//only one server to start.
-//	Legacy
+//	Legacy (TODO remove)
 	static void AutoStart(String jarname) throws IOException, InterruptedException {
 		
 //		new Server(jarname);
@@ -334,6 +339,7 @@ public class Main {
 		
 		if (!Server.p.isAlive()) {
 			new Server(servArgs);
+			Server.sendCommand("say MSPLite " + VERSION);
 			return true;
 		}
 		else {
@@ -382,7 +388,8 @@ public class Main {
 					+ "\nReplaceRedstone"
 					+ "\nping"
 					+ "\nexit"
-					+ "\nsend");
+					+ "\nsend"
+					+ "\nrestart");
 		}
 		
 	}
@@ -433,6 +440,10 @@ public class Main {
 		case "send":
 			System.out.println("Usage: \"send <command>\""
 					+ "\nSends <command> to the server");
+			break;
+		case "restart":
+			System.out.println("Usage: \"restart\""
+					+ "\nRestarts server if it closed outside of MSPLite's console authority");
 			break;
 			default: output("Not a command");
 		

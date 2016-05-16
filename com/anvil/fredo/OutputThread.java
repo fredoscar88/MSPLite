@@ -3,9 +3,6 @@ package com.anvil.fredo;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.io.InputStreamReader;
 
 public class OutputThread extends Thread implements Runnable {
@@ -50,7 +47,8 @@ public class OutputThread extends Thread implements Runnable {
 				try {
 					Main.servOutput(output);
 					Main.dbOutput(Boolean.toString(Server.p.isAlive()));
-					if (!Server.p.isAlive()) terminate();
+					//if (!Server.p.isAlive()) terminate();
+					if (!Server.p.isAlive()) throw new Exception();
 					
 					if (MSPPlayersEnabled) oi.Interpret(output);
 				}
@@ -65,7 +63,7 @@ public class OutputThread extends Thread implements Runnable {
 //				Main.dbOutput(Boolean.toString(Server.p.isAlive()));
 			} catch (Exception e) {
 				e.printStackTrace();
-				System.out.println("Something has gone terribly wrong! But I don't know what!");
+				System.out.println("Something has gone terribly wrong! But I don't know what! There is a small chance that I threw this exception");
 			}
 
 		}
@@ -93,6 +91,7 @@ public class OutputThread extends Thread implements Runnable {
 	
 	public void terminate() {
 		this.running = false;
+		//this.terminate();
 	}
 	
 	/*public void start() {

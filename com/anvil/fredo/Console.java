@@ -36,7 +36,8 @@ public class Console {
 		
 		if (ConsoleInput == null) {
 			
-			System.out.print(": ");
+			/*(TODO) remove this line, the colon just gets in the way because the console is sharing space with server output
+			System.out.print(": ");*/
 			ConsoleInput = ConsoleReader.nextLine();
 			//ConsoleInput = ConsoleInput.toLowerCase();
 				
@@ -94,9 +95,11 @@ public class Console {
 			}
 			
 		} catch (IndexOutOfBoundsException e) {
-			e.printStackTrace();
-			System.out.println("My conjecture is the substring ran when it shouldn't have, in Console"
-					+ "\nHopefully this caught exception won't force the program into crashing");
+			//e.printStackTrace();
+			//This can happen when the command is empty
+			
+			/*System.out.println("My conjecture is the substring ran when it shouldn't have, in Console"
+					+ "\nHopefully this caught exception won't force the program into crashing");*/
 			cmd = new ArrayList<String>();
 			cmd.add("help");
 		}

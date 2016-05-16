@@ -1,10 +1,17 @@
 //MSPLite
 package com.anvil.fredo;
 
+/*
+ * Uses a JSON library, see UUID class for url
+ */
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 
 //this class will serve like one purpose :I
@@ -28,13 +35,13 @@ public class OutputInterpret {
 		
 	}
 	
-	public void Interpret(String input) throws IOException, InterruptedException {
+	public void Interpret(String input) throws IOException, InterruptedException, JSONException {
 //		Main.dbOutput("OutputInterpret, Interpret: Interpret succesfully called.");
 		input = Reduce(input);
 		message = InputCheck(input);
 		
 		//message.get(0);	//Executor of the command
-		//message.get(1); //The command executed by the above
+		//message.get(1); 	//The command executed by the above
 		/*Here we check to see if the executor has the rights to execute the command and if so, executes it*/
 		
 		if (message != null && (message.get(2) == "PLAYER")) {
@@ -53,7 +60,7 @@ public class OutputInterpret {
 		
 	}
 	
-	public void PlayerAction(String player, List<String> cmd) throws IOException, InterruptedException {
+	public void PlayerAction(String player, List<String> cmd) throws IOException, InterruptedException, JSONException {
 		//Snags the players 'rank' or rather, in this case, checks to see if they are authorized.
 		//boolean temp = true;
 		
@@ -82,7 +89,7 @@ public class OutputInterpret {
 		case "!Exit": if (rank >= 1000) {Main.running = false; /*make that a setter >:V*/ /*Server.stopServer();} break;
 		}*/
 	}
-	private void commandRun(List<String> cmd, String player, int rank) throws IOException, InterruptedException {
+	private void commandRun(List<String> cmd, String player, int rank) throws IOException, InterruptedException, JSONException {
 		
 		Main.dbOutput("OI commandRun: " + cmd.get(0));
 		
@@ -95,7 +102,7 @@ public class OutputInterpret {
 		try {
 			enabled = Main.boolInterpretFromStr(enabledSetting);
 			if (!enabled) {
-				Server.sendCommand("tell " + player + " That command is not enabled.".replaceAll(" ", " \u00A7r\u00A7c"));
+				Server.sendCommand("tell " + player + " That command is not enabled, seek an administrator for assistance.".replaceAll(" ", " \u00A7r\u00A7c"));
 				return;
 			}
 		}
@@ -109,10 +116,11 @@ public class OutputInterpret {
 		
 		int cmdRank = Main.pInt(temp);		//Required minimum rank to run
 		String cmdToRun = OIFileReader.getSetting(MSPPData, (cmd.get(0) + "-Cmd"));
+		String cmdToRunFirstWord = OIC.PConsoleParse(cmdToRun).get(0);	//(TODO)
 		
 		Main.dbOutput("OI commandRun 3: " + cmdToRun);
 		
-		cmdToRun = cmdToRun.replaceAll("player", player);										//Command to run
+		cmdToRun = cmdToRun.replaceAll("user", player);										//Command to run
 		try {cmdToRun = cmdToRun.replaceAll("param2", cmd.get(1));} catch (IndexOutOfBoundsException e) {/*There is no second word to this command!*/}
 		if ((rank >= cmdRank) && cmdToRun.startsWith("SCRIPT")) {
 //			This is interesting, we're totally ignoring the whole actually checking shit. ugh.
@@ -121,15 +129,32 @@ public class OutputInterpret {
 		
 			enabled = false; //this is to skip the below rows
 		}
+		
+		Main.dbOutput("OI commandRun 4: " + cmdRank + ": commandRank, " + rank + ": player rank, " + cmdToRun + ": command");
+		
 		//Why can't script go down there? we need to find out OH! Because it needs to check startsWith and Script isnt the whole command. (TODO)
 		
 		//if enabled is false, then we won't get here anyway: we should be stopped by the try/catch above
 		if (enabled && (rank >= cmdRank)) {
-			switch(cmdToRun) {
+			//switch(cmdToRun) { (DEBUG)
+			switch(cmdToRunFirstWord) {
 			case "MAKEREDSTONE": Main.MakeRedstone(); break;
 			case "REPLACEREDSTONE": Main.replaceRedstone(); break;
 			case "EXIT": Main.running = false; Server.stopServer(false); break;	//(TODO) Main.mainConsole.ConsoleRun("exit"); should work too
 			case "RESTART": Server.stopServer(true); break;
+			case "UUID": 
+				try {
+					Main.dbOutput("You have reached the UUID command!");	//(DEBUG)
+					JSONObject playerInfo = new UUID(dehyphenate(cmd.get(1))).getData();
+					Server.sendCommand("say Hello, " + player);
+					Server.sendCommand("tell " + player + " \u00A7aName: " + playerInfo.getString("name") + ", \u00A7aUUID: " + playerInfo.getString("id"));
+				} 
+				catch (IndexOutOfBoundsException e) 
+				{
+					Server.sendCommand("say Oh dear, " + player);
+					Server.sendCommand("tell " + player + " Proper syntax is \"!uuid <playername> OR !uuid <UUID>\"".replaceAll(" ", " \u00A7r\u00A7c"));
+				} 
+				break;
 			default: Server.sendCommand(cmdToRun);
 			}
 		}
@@ -274,6 +299,12 @@ public class OutputInterpret {
 		
 		return playerSetting;
 	}
+
+	static private String dehyphenate(String input) {
+		
+		return input.replaceAll("-", "");
+	}
+	
 }
 
 /*
